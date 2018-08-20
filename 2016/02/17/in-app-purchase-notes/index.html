@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="IAP(In-App Purchase) Programming NotesiOS Dev Lib Reference [TOC] At a Glance">
+<meta name="keywords" content="iOS,in-app purchase">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IAP文档笔记">
+<meta property="og:url" content="https://blog.yeatse.com/2016/02/17/in-app-purchase-notes/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="IAP(In-App Purchase) Programming NotesiOS Dev Lib Reference [TOC] At a Glance">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/intro_2x.png">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/retrieving_product_info_2x.png">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/requesting_payment_2x.png">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/delivering_products_2x.png">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.630Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="IAP文档笔记">
+<meta name="twitter:description" content="IAP(In-App Purchase) Programming NotesiOS Dev Lib Reference [TOC] At a Glance">
+<meta name="twitter:image" content="https://blog.yeatse.com/images/2016/intro_2x.png">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2016/02/17/in-app-purchase-notes/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>IAP文档笔记 | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2016/02/17/in-app-purchase-notes/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">IAP文档笔记
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2016-02-17 19:55:03" itemprop="dateCreated datePublished" datetime="2016-02-17T19:55:03+08:00">2016-02-17</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="IAP-In-App-Purchase-Programming-Notes"><a href="#IAP-In-App-Purchase-Programming-Notes" class="headerlink" title="IAP(In-App Purchase) Programming Notes"></a>IAP(In-App Purchase) Programming Notes</h1><p><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/StoreKitGuide/Introduction.html" target="_blank" rel="noopener">iOS Dev Lib Reference</a></p>
+<p>[TOC]</p>
+<h2 id="At-a-Glance"><a href="#At-a-Glance" class="headerlink" title="At a Glance"></a>At a Glance</h2><p><img src="/images/2016/intro_2x.png" alt="States of the purchase process"></p>
+<a id="more"></a>
+<h2 id="iTunes-Connect-Configurations"><a href="#iTunes-Connect-Configurations" class="headerlink" title="iTunes Connect Configurations"></a>iTunes Connect Configurations</h2><ul>
+<li>Configure IAP products.</li>
+<li>Test IAP products.</li>
+<li>Submit IAP products for review.</li>
+<li>Manage the IAP products available in the app.</li>
+<li><a href="https://developer.apple.com/library/ios/documentation/LanguagesUtilities/Conceptual/iTunesConnectInAppPurchase_Guide/Chapters/Introduction.html" target="_blank" rel="noopener">iOS dev lib reference</a></li>
+</ul>
+<h2 id="Retrieving-Product-Information"><a href="#Retrieving-Product-Information" class="headerlink" title="Retrieving Product Information"></a>Retrieving Product Information</h2><p><img src="/images/2016/retrieving_product_info_2x.png" alt="displaying store UI"></p>
+<ul>
+<li><p>Get a list of product identifiers.</p>
+<ul>
+<li>Product ids can be retrieved through network or app bundle.</li>
+<li>Product ids are configured in iTunes Connect, and formed like: “com.example.level1”, “com.example.rocket_car”.</li>
+</ul>
+</li>
+<li><p>Retrieving product information.</p>
+<ul>
+<li>Create a instance of <a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/SKProductsRequest/index.html" target="_blank" rel="noopener">SKProductsRequest</a> and initialize it with a list of product ids.</li>
+<li>The <code>SKProductsRequest</code> should be kept with a strong reference in case of instant deallocation.</li>
+<li>Results – both valid and invalid ones – are called back to the delegate.</li>
+<li>Valid products are encapsulated as a list of <code>SKProduct</code> objects, from which we can get the titles/descriptions/prices.</li>
+</ul>
+</li>
+<li><p>Presenting the app’s store ui.</p>
+<ul>
+<li>Users can be restricted to access the store payment. Call <a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/SKPaymentQueue_Class/index.html#//apple_ref/occ/clm/SKPaymentQueue/canMakePayments" target="_blank" rel="noopener">canMakePayments</a> class method (<code>SKPaymentQueue</code>) before displaying the store ui or an error message.</li>
+<li>Users should be informed exactly what they are going to buy.</li>
+<li>Display prices clearly, using the locale and currency returned by the App Store.</li>
+<li><p>A product’s price formatting example:</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">NSNumberFormatter</span> *numberFormatter = [[<span class="built_in">NSNumberFormatter</span> alloc] init];</span><br><span class="line">[numberFormatter setFormatterBehavior:<span class="built_in">NSNumberFormatterBehavior10_4</span>];</span><br><span class="line">[numberFormatter setNumberStyle:<span class="built_in">NSNumberFormatterCurrencyStyle</span>];</span><br><span class="line">[numberFormatter setLocale:product.priceLocale];</span><br><span class="line"><span class="built_in">NSString</span> *formattedPrice = [numberFormatter stringFromNumber:product.price];</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>Suggested testing steps:<br>  <a href="https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/StoreKitGuide/Chapters/ShowUI.html#//apple_ref/doc/uid/TP40008267-CH3-SW11" target="_blank" rel="noopener">iOS Dev Lib Ref</a></p>
+</li>
+</ul>
+<h2 id="Requesting-Payment"><a href="#Requesting-Payment" class="headerlink" title="Requesting Payment"></a>Requesting Payment</h2><p><img src="/images/2016/requesting_payment_2x.png" alt="requesting_payment_2x"></p>
+<ul>
+<li><p>Creating a payment request.</p>
+  <figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">SKProduct</span> *product = &lt;<span class="meta"># Product returned by a products request #&gt;;</span></span><br><span class="line"><span class="built_in">SKMutablePayment</span> *payment = [<span class="built_in">SKMutablePayment</span> paymentWithProduct:product];</span><br><span class="line">payment.quantity = <span class="number">2</span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/SKPaymentRequest_Class/index.html#//apple_ref/occ/instp/SKPayment/applicationUsername" target="_blank" rel="noopener">applicationUsername</a> of the <code>SKMutablePayment</code> object can be populated with a one-way hash of the user’s app account name for further authorization.</p>
+</li>
+<li><p>Submitting a payment request.</p>
+  <figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[[<span class="built_in">SKpaymentQueue</span> defaultQueue] addPayment:payment];</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="Delivering-Products"><a href="#Delivering-Products" class="headerlink" title="Delivering Products"></a>Delivering Products</h2><p><img src="/images/2016/delivering_products_2x.png" alt="delivering products"></p>
+<ul>
+<li><p>Waiting for the App Store to process transations.</p>
+<ul>
+<li>Central role: <em>transaction queue</em></li>
+<li>Payment requests are added to the transaction queue.</li>
+<li>When the transation’s state changes, Store Kit calls the app’s <em>transaction queue observer</em>.</li>
+<li>The observer must conform to the <a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/SKPaymentTransactionObserver_Protocol/index.html" target="_blank" rel="noopener">SKPaymentTransactionObserver</a> protocol.</li>
+<li><p>Register the observer at launch time, and make sure that the observer is ready to handle a transaction at any time.</p>
+  <figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">BOOL</span>)application:(<span class="built_in">UIApplication</span> *)application didFinishLaunchingWithOptions:(<span class="built_in">NSDictionary</span> *)launchOptions</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">/* ... */</span></span><br><span class="line">    </span><br><span class="line">    [[<span class="built_in">SKPaymentQueue</span> defaultQueue] addTransactionObserver:observer];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>If your app fails to mark a transaction as finished, Store Kit calls the observer every time your app is launched until the transaction is properly finished.</p>
+</li>
+<li>Store Kit call the <a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/SKPaymentTransactionObserver_Protocol/index.html#//apple_ref/occ/intfm/SKPaymentTransactionObserver/paymentQueue:updatedTransactions:" target="_blank" rel="noopener">paymentQueue:updatedTransactions:</a> method when the status of a transaction changes.</li>
+<li><p>The transaction status tells you what action your app needs to perform:</p>
+<p>  Status | Action to take in your app<br>  —— | ——<br>  <a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/SKPaymentTransaction_Class/index.html#//apple_ref/c/econst/SKPaymentTransactionStatePurchasing" target="_blank" rel="noopener">SKPaymentTransactionStatePurchasing</a> | Update your UI to reflect the in-progress status, and wait to be called again.<br>  <a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/SKPaymentTransaction_Class/index.html#//apple_ref/c/econst/SKPaymentTransactionStateDeferred" target="_blank" rel="noopener">SKPaymentTransactionStateDeferred</a> | Update your UI to reflect the deferred status, and wait to be called again.<br>  <a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/SKPaymentTransaction_Class/index.html#//apple_ref/c/econst/SKPaymentTransactionStateFailed" target="_blank" rel="noopener">SKPaymentTransactionStateFailed</a> | Use the value of the error property to present a message to the user. For a list of error constants, see <a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/StoreKitTypes/index.html#//apple_ref/doc/constant_group/SKErrorDomain" target="_blank" rel="noopener">SKErrorDomain</a> in <a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/StoreKitTypes/index.html#//apple_ref/doc/uid/TP40008588" target="_blank" rel="noopener">StoreKit Constants Reference</a>.<br>  <a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/SKPaymentTransaction_Class/index.html#//apple_ref/c/econst/SKPaymentTransactionStatePurchased" target="_blank" rel="noopener">SKPaymentTransactionStatePurchased</a> | Provide the purchased functionality.<br>  <a href="https://developer.apple.com/library/ios/documentation/StoreKit/Reference/SKPaymentTransaction_Class/index.html#//apple_ref/c/econst/SKPaymentTransactionStateRestored" target="_blank" rel="noopener">SKPaymentTransactionStateRestored</a> | Restore the previously purchased functionality.</p>
+</li>
+<li><p>Responding to transaction statuses:</p>
+  <figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)paymentQueue:(<span class="built_in">SKPaymentQueue</span> *)queue</span><br><span class="line"> updatedTransactions:(<span class="built_in">NSArray</span> *)transactions</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">SKPaymentTransaction</span> *transaction <span class="keyword">in</span> transactions) &#123;</span><br><span class="line">        <span class="keyword">switch</span> (transaction.transactionState) &#123;</span><br><span class="line">            <span class="comment">// Call the appropriate custom method for the transaction state.</span></span><br><span class="line">            <span class="keyword">case</span> <span class="built_in">SKPaymentTransactionStatePurchasing</span>:</span><br><span class="line">                [<span class="keyword">self</span> showTransactionAsInProgress:transaction deferred:<span class="literal">NO</span>];</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="built_in">SKPaymentTransactionStateDeferred</span>:</span><br><span class="line">                [<span class="keyword">self</span> showTransactionAsInProgress:transaction deferred:<span class="literal">YES</span>];</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="built_in">SKPaymentTransactionStateFailed</span>:</span><br><span class="line">                [<span class="keyword">self</span> failedTransaction:transaction];</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="built_in">SKPaymentTransactionStatePurchased</span>:</span><br><span class="line">                [<span class="keyword">self</span> completeTransaction:transaction];</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="built_in">SKPaymentTransactionStateRestored</span>:</span><br><span class="line">                [<span class="keyword">self</span> restoreTransaction:transaction];</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="comment">// For debugging</span></span><br><span class="line">                <span class="built_in">NSLog</span>(<span class="string">@"Unexpected transaction state %@"</span>, @(transaction.transactionState));</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Implement <code>paymentQueue:removedTransactions:</code> method to remove the corresponding items from app’s UI.</p>
+</li>
+<li>Implement <code>paymentQueueRestoreCompletedTransactionsFinished:</code> or <code>paymentQueue:restoreCompletedTransactionsFailedWithError:</code> method to reflect the restoring result.</li>
+</ul>
+</li>
+<li><p>Finishing the transaction</p>
+<ul>
+<li>Your app needs to finish every transaction, regardless of whether the transaction succeeded or failed.</li>
+<li>Complete all of the following actions before finishing the transaction:<ol>
+<li><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/StoreKitGuide/Chapters/DeliverProduct.html#//apple_ref/doc/uid/TP40008267-CH5-SW5" target="_blank" rel="noopener">Persisting the purchase</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/StoreKitGuide/Chapters/DeliverProduct.html#//apple_ref/doc/uid/TP40008267-CH5-SW9" target="_blank" rel="noopener">Download associated content</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/StoreKitGuide/Chapters/DeliverProduct.html#//apple_ref/doc/uid/TP40008267-CH5-SW20" target="_blank" rel="noopener">Update UI to unlock the app functionality</a></li>
+</ol>
+</li>
+<li><p>To finish a transaction, call the <code>finishTransaction:</code> method:</p>
+  <figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">SKPaymentTransaction</span> *transaction = &lt;<span class="meta"># The current payment #&gt;;</span></span><br><span class="line">[[<span class="built_in">SKPaymentQueue</span> defaultQueue] finishTransaction:transaction];</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Suggested testing steps:<br>  <a href="https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/StoreKitGuide/Chapters/DeliverProduct.html#//apple_ref/doc/uid/TP40008267-CH5-SW12" target="_blank" rel="noopener">iOS Dev Lib Ref</a></p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="Preparing-for-App-Review"><a href="#Preparing-for-App-Review" class="headerlink" title="Preparing for App Review"></a>Preparing for App Review</h2><p><a href="https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/StoreKitGuide/Chapters/AppReview.html#//apple_ref/doc/uid/TP40008267-CH10-SW1" target="_blank" rel="noopener">iOS Dev Lib Ref</a></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+            <a href="/tags/in-app-purchase/" rel="tag"># in-app purchase</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/11/08/jetpack-register-http-failed/" rel="next" title="Jetpack启动时返回register_http_failed错误">
+                <i class="fa fa-chevron-left"></i> Jetpack启动时返回register_http_failed错误
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/02/18/beyond-compare-4-for-mac-infinite-trial/" rel="prev" title="Beyond Compare 4 for Mac 无限试用">
+                Beyond Compare 4 for Mac 无限试用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#IAP-In-App-Purchase-Programming-Notes"><span class="nav-number">1.</span> <span class="nav-text">IAP(In-App Purchase) Programming Notes</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#At-a-Glance"><span class="nav-number">1.1.</span> <span class="nav-text">At a Glance</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#iTunes-Connect-Configurations"><span class="nav-number">1.2.</span> <span class="nav-text">iTunes Connect Configurations</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Retrieving-Product-Information"><span class="nav-number">1.3.</span> <span class="nav-text">Retrieving Product Information</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Requesting-Payment"><span class="nav-number">1.4.</span> <span class="nav-text">Requesting Payment</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Delivering-Products"><span class="nav-number">1.5.</span> <span class="nav-text">Delivering Products</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Preparing-for-App-Review"><span class="nav-number">1.6.</span> <span class="nav-text">Preparing for App Review</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

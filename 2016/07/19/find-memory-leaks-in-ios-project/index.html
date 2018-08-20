@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="一般来说，在 ARC 环境下，只要在使用 delegate、NSTimer、block 的时候注意一下不要出现循环引用，那么 Objective-C 对象的内存泄漏问题就可以轻松避免。 但是在实际项目中，一些错误的结构设计可能会导致难以发现的泄漏问题，比如像 A -&amp;gt; B -&amp;gt; C -&amp;gt; ... -&amp;gt; A 这种长环的循环引用，或者一个实例被一个 单例 持有，在 review">
+<meta name="keywords" content="iOS,Objective-C">
+<meta property="og:type" content="article">
+<meta property="og:title" content="检测 iOS 项目中的内存泄漏">
+<meta property="og:url" content="https://blog.yeatse.com/2016/07/19/find-memory-leaks-in-ios-project/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="一般来说，在 ARC 环境下，只要在使用 delegate、NSTimer、block 的时候注意一下不要出现循环引用，那么 Objective-C 对象的内存泄漏问题就可以轻松避免。 但是在实际项目中，一些错误的结构设计可能会导致难以发现的泄漏问题，比如像 A -&amp;gt; B -&amp;gt; C -&amp;gt; ... -&amp;gt; A 这种长环的循环引用，或者一个实例被一个 单例 持有，在 review">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/QQ20160719-1@2x.png">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/QQ20160720-0@2x.png">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/QQ20160720-1@2x.png">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.629Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="检测 iOS 项目中的内存泄漏">
+<meta name="twitter:description" content="一般来说，在 ARC 环境下，只要在使用 delegate、NSTimer、block 的时候注意一下不要出现循环引用，那么 Objective-C 对象的内存泄漏问题就可以轻松避免。 但是在实际项目中，一些错误的结构设计可能会导致难以发现的泄漏问题，比如像 A -&amp;gt; B -&amp;gt; C -&amp;gt; ... -&amp;gt; A 这种长环的循环引用，或者一个实例被一个 单例 持有，在 review">
+<meta name="twitter:image" content="https://blog.yeatse.com/images/2016/QQ20160719-1@2x.png">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2016/07/19/find-memory-leaks-in-ios-project/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>检测 iOS 项目中的内存泄漏 | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2016/07/19/find-memory-leaks-in-ios-project/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">检测 iOS 项目中的内存泄漏
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2016-07-19 21:36:50" itemprop="dateCreated datePublished" datetime="2016-07-19T21:36:50+08:00">2016-07-19</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>一般来说，在 ARC 环境下，只要在使用 delegate、NSTimer、block 的时候注意一下不要出现循环引用，那么 Objective-C 对象的内存泄漏问题就可以轻松避免。</p>
+<p>但是在实际项目中，一些错误的结构设计可能会导致难以发现的泄漏问题，比如像 <code>A -&gt; B -&gt; C -&gt; ... -&gt; A</code> 这种长环的循环引用，或者一个实例被一个 单例 持有，在 review 的时候可能会漏掉这些问题，这时就需要流程化的方式来检测了。</p>
+<a id="more"></a>
+<p>一个很方便的检测方法是重写 dealloc 方法：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)dealloc &#123;</span><br><span class="line">    <span class="built_in">NSLog</span>(<span class="string">@"%s"</span>, __func__);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>只要目标对象有 dealloc 的 log 输出，就表示这里没有出现循环引用问题。</p>
+<p>对于拿不到源文件的类，也可以通过类似的方法来实现：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// DeallocationObserver.h</span></span><br><span class="line"><span class="meta">#import <span class="meta-string">&lt;Foundation/Foundation.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">DeallocationObserver</span> : <span class="title">NSObject</span></span></span><br><span class="line"></span><br><span class="line">+ (<span class="keyword">instancetype</span>)attachObserverToObject:(<span class="keyword">id</span>)object;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// DeallocationObserver.m</span></span><br><span class="line"><span class="meta">#import <span class="meta-string">"DeallocationObserver.h"</span></span></span><br><span class="line"><span class="meta">#import <span class="meta-string">&lt;objc/runtime.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">char</span> ObserverTag;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">DeallocationObserver</span> ()</span></span><br><span class="line"></span><br><span class="line">- (<span class="keyword">instancetype</span>)initWithParent:(<span class="keyword">id</span>)parent;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>, <span class="keyword">copy</span>) <span class="keyword">void</span>(^deallocationBlock)();</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">DeallocationObserver</span></span></span><br><span class="line"></span><br><span class="line">+ (<span class="keyword">instancetype</span>)attachObserverToObject:(<span class="keyword">id</span>)object &#123;</span><br><span class="line">    <span class="keyword">return</span> [[<span class="keyword">self</span> alloc] initWithParent:object];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">instancetype</span>)initWithParent:(<span class="keyword">id</span>)parent &#123;</span><br><span class="line">    <span class="keyword">self</span> = [<span class="keyword">super</span> init];</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>) &#123;</span><br><span class="line">        <span class="built_in">NSString</span>* deallocMsg = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"deallocated: %@"</span>, parent];</span><br><span class="line">        <span class="keyword">self</span>.deallocationBlock = ^&#123;</span><br><span class="line">            <span class="built_in">NSLog</span>(<span class="string">@"%@"</span>, deallocMsg);</span><br><span class="line">        &#125;;</span><br><span class="line">        objc_setAssociatedObject(parent, &amp;ObserverTag, <span class="keyword">self</span>, OBJC_ASSOCIATION_RETAIN_NONATOMIC);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">self</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)dealloc &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.deallocationBlock) &#123;</span><br><span class="line">        <span class="keyword">self</span>.deallocationBlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// Usage:</span></span><br><span class="line"><span class="built_in">NSObject</span>* testObj = [<span class="built_in">NSObject</span> new];</span><br><span class="line">[DeallocationObserver attachObserverToObject:testObj];</span><br><span class="line">testObj = <span class="literal">nil</span>;  <span class="comment">// Output - deallocated: &lt;NSObject: 0x7fce1a412c10&gt;</span></span><br></pre></td></tr></table></figure>
+<p>因为 NSObject 对象在 dealloc 的时候也会把 objc_setAssociatedObject 关联的对象也一并 release 掉，通过监听 DeallocationObserver 的销毁时机，我们就可以检测到目标对象的销毁事件了。</p>
+<p>由于 ARC 只对 NSObject 有效，所以对于 Core Foundation、Core Graphics 等非 NSObject 对象，就需要苹果提供的 Instruments 来检测内存泄漏问题了。 </p>
+<p>按照 Instruments 的<a href="https://developer.apple.com/library/ios/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/FindingLeakedMemory.html" target="_blank" rel="noopener">官方文档</a>中的步骤，测试一下这段代码：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)testMemoryLeak &#123;</span><br><span class="line">    <span class="built_in">CFMutableDataRef</span> data = <span class="built_in">CFDataCreateMutable</span>(kCFAllocatorDefault, <span class="number">0</span>);</span><br><span class="line">    <span class="built_in">CGDataConsumerRef</span> consumer = <span class="built_in">CGDataConsumerCreateWithCFData</span>(data);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>打开 Instruments - Leaks，选择目标设备和应用，然后点击🔴按钮，时间线面板就开始记录当前内存的使用情况：<br><img src="/images/2016/QQ20160719-1@2x.png" alt="QQ20160719-1@2x"></p>
+<p>可以看出，图中 28 s 的位置出现了内存泄漏，泄漏点刚好在 testMemoryLeak 方法上。</p>
+<p>修改 Details 栏的 Leaks 选项，切换到 Call Tree，<kbd>⌘ + 2</kbd> 键切换到 Display Settings，然后勾选右边设置栏中的 Invert Call Tree 和 Hide System Libraries 选项，可以看到泄漏点具体的调用栈：<br><img src="/images/2016/QQ20160720-0@2x.png" alt="QQ20160720-0@2x"></p>
+<p>双击其中一个方法，Instruments 还会把出错的具体代码标识出来：<br><img src="/images/2016/QQ20160720-1@2x.png" alt="QQ20160720-1@2x"></p>
+<p>问题果然出现在 CFDataCreateMutable 和 CGDataConsumerCreateWithCFData 上，根据 Core Foundation 中 <a href="https://developer.apple.com/library/ios/documentation/CoreFoundation/Conceptual/CFMemoryMgmt/Concepts/Ownership.html#//apple_ref/doc/uid/20001148-SW3" target="_blank" rel="noopener">关于方法命名的约定</a>，含有 <code>Copy</code> 和 <code>Create</code> 的方法返回的对象需要调用 CFRelease 来释放，Core Graphics / Core Text 也一样，所以需要在 testMemoryLeak 方法中加入这两行，以解决这里的内存泄漏问题：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">CGDataConsumerRelease</span>(consumer);</span><br><span class="line"><span class="built_in">CFRelease</span>(data);</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+            <a href="/tags/Objective-C/" rel="tag"># Objective-C</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/06/20/default-implementation-for-oc-protocol/" rel="next" title="给 Objective-C 中的 Protocol 加上默认的实现">
+                <i class="fa fa-chevron-left"></i> 给 Objective-C 中的 Protocol 加上默认的实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/07/30/show-a-friendly-alert-after-app-crashes/" rel="prev" title="在 iOS APP 崩溃时弹出友好提示框">
+                在 iOS APP 崩溃时弹出友好提示框 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

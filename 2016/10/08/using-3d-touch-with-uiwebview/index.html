@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="0x00 3D Touch API 处理 UIWebView 的局限从 iOS 9 开始，UIKit 新增了 3D Touch 相关接口，如果使用苹果推荐的 storyboard 搭建 UI，勾选了 Preview &amp;amp; Commit Segues 选项之后就可以零代码实现系统级的 3D Touch 效果；用代码实现也很简单，只要实现 UIViewControllerPreviewingDe">
+<meta name="keywords" content="iOS,UIKit,3D Touch">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UIWebView 与 3D Touch 的自定义交互">
+<meta property="og:url" content="https://blog.yeatse.com/2016/10/08/using-3d-touch-with-uiwebview/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="0x00 3D Touch API 处理 UIWebView 的局限从 iOS 9 开始，UIKit 新增了 3D Touch 相关接口，如果使用苹果推荐的 storyboard 搭建 UI，勾选了 Preview &amp;amp; Commit Segues 选项之后就可以零代码实现系统级的 3D Touch 效果；用代码实现也很简单，只要实现 UIViewControllerPreviewingDe">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/14759362518041.jpg">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/14759368882844.jpg">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/20161009-screenshot.gif">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/14759403483679.jpg">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.633Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="UIWebView 与 3D Touch 的自定义交互">
+<meta name="twitter:description" content="0x00 3D Touch API 处理 UIWebView 的局限从 iOS 9 开始，UIKit 新增了 3D Touch 相关接口，如果使用苹果推荐的 storyboard 搭建 UI，勾选了 Preview &amp;amp; Commit Segues 选项之后就可以零代码实现系统级的 3D Touch 效果；用代码实现也很简单，只要实现 UIViewControllerPreviewingDe">
+<meta name="twitter:image" content="https://blog.yeatse.com/images/2016/14759362518041.jpg">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2016/10/08/using-3d-touch-with-uiwebview/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>UIWebView 与 3D Touch 的自定义交互 | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2016/10/08/using-3d-touch-with-uiwebview/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">UIWebView 与 3D Touch 的自定义交互
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2016-10-08 20:50:40" itemprop="dateCreated datePublished" datetime="2016-10-08T20:50:40+08:00">2016-10-08</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="0x00-3D-Touch-API-处理-UIWebView-的局限"><a href="#0x00-3D-Touch-API-处理-UIWebView-的局限" class="headerlink" title="0x00 3D Touch API 处理 UIWebView 的局限"></a>0x00 3D Touch API 处理 UIWebView 的局限</h2><p>从 iOS 9 开始，UIKit 新增了 3D Touch 相关接口，如果使用苹果推荐的 storyboard 搭建 UI，勾选了 <code>Preview &amp; Commit Segues</code> 选项之后就可以零代码实现系统级的 3D Touch 效果；用代码实现也很简单，只要实现 <code>UIViewControllerPreviewingDelegate</code> 协议，然后调用 <code>- [UIViewController registerForPreviewingWithDelegate:sourceView:]</code> 方法，就可以对任意 UIView 进行 Peek 和 Pop 操作了。</p>
+<p>实际上，尽管 <code>- [UIViewController registerForPreviewingWithDelegate:sourceView:]</code> 方法的第二个参数接受的是任意的 UIView，但在 UIWebView 和 WKWebView 上按压的操作却是没有效果的。虽然苹果针对这两个 WebView 提供了 <code>allowsLinkPreview</code> 属性做了特殊处理，但这也仅仅是调用了 Safari 打开链接，实际应用中经常要针对某些特殊的链接进行应用内跳转，这是 <code>allowsLinkPreview</code> 无论如何也完成不了的。</p>
+<a id="more"></a>
+<p>那么为什么在其他 View 上都正常的 3D Touch 在 WebView 上却无效了呢？以 UIWebView 为例，在实际应用中可以发现，如果把 WebView 的 <code>userInteractionEnabled</code> 值设为 NO，或者按压空白位置，<code>UIViewControllerPreviewingDelegate</code> 中的方法还是可以正常回调的，所以原因很可能是 UIWebView 处理链接点击事件的手势与 3D Touch 的手势发生了冲突。要让 UIWebView 和其他 View 一样支持 Peek &amp; Pop，就要完成以下三个步骤：</p>
+<ol>
+<li>取出 UIWebView 中处理点击事件的 gesture recognizer；</li>
+<li>取出 UIWebView 中处理 3D Touch 的 gesture recognizer；</li>
+<li>对 <code>1</code> 中的每一个手势监听器，调用 <code>- [UIGestureRecognizer requireGestureRecognizerToFail:]</code> 方法，保证 UIKit 优先处理 3D Touch 事件。</li>
+</ol>
+<h2 id="0x01-UIWebView-的点击与-3D-Touch-手势的冲突解决"><a href="#0x01-UIWebView-的点击与-3D-Touch-手势的冲突解决" class="headerlink" title="0x01 UIWebView 的点击与 3D Touch 手势的冲突解决"></a>0x01 UIWebView 的点击与 3D Touch 手势的冲突解决</h2><p>通过断点等方法可以得出，UIWebView 的内部视图层级结构和继承关系是这样的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">+--- UIWebView → UIView</span><br><span class="line">|   |</span><br><span class="line">|   +--- _UIWebViewScrollView → UIWebScrollView → UIScrollView → UIView</span><br><span class="line">|       |</span><br><span class="line">|       +--- UIWebBrowserView → UIWebDocumentView → UIWebTiledView → UIView</span><br><span class="line">|           |</span><br><span class="line">|           (...)</span><br></pre></td></tr></table></figure>
+<p>UIWebBrowserView 是显示 WebView 内部元素的容器，处理链接点击事件也应该由它来做，于是在 Xcode 中打个断点偷窥一下成员变量，果然在它的父类 UIWebDocumentView 里看到了一组与 gesture 有关的私有成员：</p>
+<p><img src="/images/2016/14759362518041.jpg" alt=""></p>
+<p>看这些单词的意思很明显了，与 3D Touch 冲突的手势可能是 <code>_singleTapGestureRecognizer</code>、<code>highlightLongPressGestureRecognizer</code>、<code>_longPressGestureRecognizer</code>。在 runtime 面前一切私有成员都是纸老虎，通过 KVC 把这三个手势取出来：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">UIView</span>* browserView = [<span class="keyword">self</span> valueForKeyPath:<span class="string">@"internal.browserView"</span>]; <span class="comment">// internal.browserView 是一个能获取内部 UIWebBrowserView 的私有 keyPath</span></span><br><span class="line"><span class="built_in">UIGestureRecognizer</span>* singleTapGesture = [browserView valueForKey:<span class="string">@"singleTapGestureRecognizer"</span>];</span><br><span class="line"><span class="built_in">UIGestureRecognizer</span>* longPressGesture = [browserView valueForKey:<span class="string">@"longPressGestureRecognizer"</span>];</span><br><span class="line"><span class="built_in">UIGestureRecognizer</span>* highlightLongPressGesture = [browserView valueForKey:<span class="string">@"highlightLongPressGestureRecognizer"</span>];</span><br></pre></td></tr></table></figure>
+<p>同样地，检查调用 <code>registerForPreviewingWithDelegate:sourceView:</code> 前后 UIWebView 的 gesture 变化，发现注册了 Previewing Delegate 之后，UIWebView 的父类 <code>UIView</code> 多出了三个手势监听器：</p>
+<p><img src="/images/2016/14759368882844.jpg" alt=""></p>
+<p>那么这三个监听器自然也就与 3D Touch 相关了。接下来调用 <code>requireGestureRecognizerToFail:</code> 为上边取出的手势添加依赖：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="built_in">UIGestureRecognizer</span>* gesture <span class="keyword">in</span> <span class="keyword">self</span>.webView.gestureRecognizers) &#123;</span><br><span class="line">    [singleTapGesture requireGestureRecognizerToFail:gesture];</span><br><span class="line">    [longPressGesture requireGestureRecognizerToFail:gesture];</span><br><span class="line">    [highlightLongPressGesture requireGestureRecognizerToFail:gesture];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样一来 UIWebView 就可以和普通的 UIView 一样使用 <code>UIViewControllerPreviewingDelegate</code> 进行 Peek 和 Pop 了：</p>
+<p><img src="/images/2016/20161009-screenshot.gif" alt="screenshot"></p>
+<h2 id="0x02-3D-Touch-过程中监听器的状态变化"><a href="#0x02-3D-Touch-过程中监听器的状态变化" class="headerlink" title="0x02 3D Touch 过程中监听器的状态变化"></a>0x02 3D Touch 过程中监听器的状态变化</h2><p>按上面的方法我们虽然可以正常使用 Peek 和 Pop，但是正常的链接点击却也受到了影响。当<code>长按</code>链接并松手之后，即使没有<code>重按</code>调出 Peek 界面，链接点击事件也依然没有触发，这跟 UIButton 和 UITableViewCell 等行为不一样，所以还需要进一步的处理。</p>
+<p>在上面得到的三个 3D Touch 相关手势当中，仅仅根据类名很难猜出它们的具体作用。于是祭出 KVO，进行操作的同时监听它们的 state 变化，得到结果如下：</p>
+<h4 id="单击"><a href="#单击" class="headerlink" title="单击"></a>单击</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">_UIPreviewInteractionTouchObservingGestureRecognizer state changed to 1</span><br><span class="line">_UIPreviewInteractionTouchObservingGestureRecognizer state changed to 2</span><br><span class="line">_UIPreviewGestureRecognizer state changed to 5</span><br><span class="line">_UIRevealGestureRecognizer state changed to 5</span><br><span class="line">_UIPreviewInteractionTouchObservingGestureRecognizer state changed to 4</span><br></pre></td></tr></table></figure>
+<h4 id="长按后松手"><a href="#长按后松手" class="headerlink" title="长按后松手"></a>长按后松手</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">_UIPreviewInteractionTouchObservingGestureRecognizer state changed to 1</span><br><span class="line">_UIPreviewInteractionTouchObservingGestureRecognizer state changed to 2</span><br><span class="line">_UIRevealGestureRecognizer state changed to 1</span><br><span class="line">_UIPreviewGestureRecognizer state changed to 1</span><br><span class="line">_UIPreviewInteractionTouchObservingGestureRecognizer state changed to 4</span><br><span class="line">_UIRevealGestureRecognizer state changed to 3</span><br><span class="line">_UIPreviewGestureRecognizer state changed to 3</span><br></pre></td></tr></table></figure>
+<h4 id="重按-Peek"><a href="#重按-Peek" class="headerlink" title="重按 (Peek)"></a>重按 (Peek)</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">_UIPreviewInteractionTouchObservingGestureRecognizer state changed to 1</span><br><span class="line">_UIPreviewInteractionTouchObservingGestureRecognizer state changed to 2</span><br><span class="line">_UIRevealGestureRecognizer state changed to 1</span><br><span class="line">_UIPreviewGestureRecognizer state changed to 1</span><br><span class="line">_UIRevealGestureRecognizer state changed to 2</span><br><span class="line">_UIPreviewGestureRecognizer state changed to 2</span><br></pre></td></tr></table></figure>
+<h4 id="重按后松手"><a href="#重按后松手" class="headerlink" title="重按后松手"></a>重按后松手</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">_UIRevealGestureRecognizer state changed to 3</span><br><span class="line">_UIPreviewGestureRecognizer state changed to 3</span><br><span class="line">_UIPreviewInteractionTouchObservingGestureRecognizer state changed to 4</span><br></pre></td></tr></table></figure>
+<h4 id="Peek-之后-Pop"><a href="#Peek-之后-Pop" class="headerlink" title="Peek 之后 Pop"></a>Peek 之后 Pop</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">_UIRevealGestureRecognizer state changed to 4</span><br><span class="line">_UIPreviewInteractionTouchObservingGestureRecognizer state changed to 4</span><br><span class="line">_UIPreviewGestureRecognizer state changed to 4</span><br></pre></td></tr></table></figure>
+<p>可以看出，对于 <code>_UIPreviewGestureRecognizer</code> 而言（<code>_UIRevealGestureRecognizer</code> 同样），除了单击的时候 state 值会变成 5 (<code>UIGestureRecognizerStateFailed</code>) 以外，其余情况都成功触发了按压手势，从而导致链接点击的手势启动失败。这也很容易理解，因为长按也算是重按的一种，力度轻了点而已，通过断点也可以看出 <code>_UIPreviewGestureRecognizer</code> 和 <code>_UIRevealGestureRecognizer</code> 本身就是继承自 <code>UILongPressGestureRecognizer</code> 的。</p>
+<p>对比<code>长按</code>和<code>重按</code>的状态变化可以发现，<code>重按</code>的时候，<code>_UIPreviewGestureRecognizer</code>的 state 值会变成 2 (<code>UIGestureRecognizerStateChanged</code>)，这就是区别<code>长按</code>和<code>重按</code>的突破口。那么接下来要做的就是，在 <code>_UIPreviewGestureRecognizer</code> 的 state 值变成 3 (<code>UIGestureRecognizerStateEnded</code>)的时候，检查之前是否有“重按”过，如果没有重按过（state 从 1 直接变成 3），那么就手动触发 <code>_singleTapGestureRecognizer</code> 手势，模拟对 UIWebView 的点击事件。</p>
+<h2 id="0x03-用代码触发-UIWebView-的点击事件"><a href="#0x03-用代码触发-UIWebView-的点击事件" class="headerlink" title="0x03 用代码触发 UIWebView 的点击事件"></a>0x03 用代码触发 UIWebView 的点击事件</h2><p>那么问题又来了，如何通过代码来触发一个手势事件呢？</p>
+<p>一个自然的想法是构造一个 UITouch 丢给系统，不过构造这个相当麻烦，<a href="http://www.cocoawithlove.com/2008/10/synthesizing-touch-event-on-iphone.html" target="_blank" rel="noopener">一篇 2008 年的文章</a>详细地说明了整个步骤。实际上我们模拟手势的目的只是为了调用对应的 selector 而已，如果能拿到对应的 selector 的话，直接调用 selector 就好了。</p>
+<p>通过断点检查 <code>_singleTapGestureRecognizer</code> 的成员变量，可以看到里面 <code>_targets</code> 那一项很有意思：</p>
+<p><img src="/images/2016/14759403483679.jpg" alt=""></p>
+<p>很明显这个单击事件最终是要调用 UIWebBrowserView 的 <code>_singleTapRecognized:</code> 方法的，所以我们可以通过 <code>performSelector:withObject:</code> 绕过 gesture recognizer 直接调用它。</p>
+<p>最后一个问题是 <code>_singleTapRecognized:</code> 的参数问题，直接传 <code>_singleTapGestureRecognizer</code> 本身会被认为点击了左上角，跟传 nil 效果一样。怀疑 Apple 使用了某个私有方法或变量来确定点击的坐标，于是传一个 NSObject 进去试试，系统弹出这个错误：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-[NSObject location]: unrecognized selector sent to instance 0x6000000162e0</span><br></pre></td></tr></table></figure>
+<p>查看 dump 出的 <a href="https://github.com/nst/iOS-Runtime-Headers/blob/master/Frameworks/UIKit.framework/UITapGestureRecognizer.h" target="_blank" rel="noopener">UITapGestureRecognizer.h</a> 文件可以知道，location 是 UITapGestureRecognizer 私有的一个计算型属性，返回类型是 CGPoint。猜想 <code>_singleTapRecognized:</code> 就是通过它来确定到底点了哪里的，那么我们只要构造出一个有 location 属性的对象，把 location 存进去再交给这个方法就可以了：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">LocationWrapper</span> : <span class="title">NSObject</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) <span class="built_in">CGPoint</span> location;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">LocationWrapper</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">LocationWrapper* wrapper = [LocationWrapper new];</span><br><span class="line">wrapper.location = [singleTapGesture locationInView:singleTapGesture.view];</span><br><span class="line">[browserView performSelector:<span class="built_in">NSSelectorFromString</span>(<span class="string">@"_singleTapRecognized"</span>) withObject:wrapper];</span><br></pre></td></tr></table></figure>
+<h2 id="0x04-Talk-is-cheap-…"><a href="#0x04-Talk-is-cheap-…" class="headerlink" title="0x04 Talk is cheap …"></a>0x04 Talk is cheap …</h2><p>按上面的思路，UIWebView 与 Peek &amp; Pop 的冲突就可以比较完美地解决了。我把它封装成了一个 category，通过 method swizzling 的方式尽量简化使用成本，只要把 UIWebView+PeekingSupport.h 和 UIWebView+PeekingSupport.m 拖到工程里，其他什么都不用做，就可以像正常 UIView 一样在使用 UIWebView 上使用 3D Touch 了。项目地址在这里：<br><a href="https://github.com/yeatse/UIWebView-PeekingSupport" target="_blank" rel="noopener">https://github.com/yeatse/UIWebView-PeekingSupport</a></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+            <a href="/tags/UIKit/" rel="tag"># UIKit</a>
+          
+            <a href="/tags/3D-Touch/" rel="tag"># 3D Touch</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/09/10/view-controller-transition-implementation/" rel="next" title="View Controller 转场实现机制分析">
+                <i class="fa fa-chevron-left"></i> View Controller 转场实现机制分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/10/26/support-nsurlprotocol-in-wkwebview/" rel="prev" title="让 WKWebView 支持 NSURLProtocol">
+                让 WKWebView 支持 NSURLProtocol <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-3D-Touch-API-处理-UIWebView-的局限"><span class="nav-number">1.</span> <span class="nav-text">0x00 3D Touch API 处理 UIWebView 的局限</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-UIWebView-的点击与-3D-Touch-手势的冲突解决"><span class="nav-number">2.</span> <span class="nav-text">0x01 UIWebView 的点击与 3D Touch 手势的冲突解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-3D-Touch-过程中监听器的状态变化"><span class="nav-number">3.</span> <span class="nav-text">0x02 3D Touch 过程中监听器的状态变化</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单击"><span class="nav-number">3.0.1.</span> <span class="nav-text">单击</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#长按后松手"><span class="nav-number">3.0.2.</span> <span class="nav-text">长按后松手</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#重按-Peek"><span class="nav-number">3.0.3.</span> <span class="nav-text">重按 (Peek)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#重按后松手"><span class="nav-number">3.0.4.</span> <span class="nav-text">重按后松手</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Peek-之后-Pop"><span class="nav-number">3.0.5.</span> <span class="nav-text">Peek 之后 Pop</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-用代码触发-UIWebView-的点击事件"><span class="nav-number">4.</span> <span class="nav-text">0x03 用代码触发 UIWebView 的点击事件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x04-Talk-is-cheap-…"><span class="nav-number">5.</span> <span class="nav-text">0x04 Talk is cheap …</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

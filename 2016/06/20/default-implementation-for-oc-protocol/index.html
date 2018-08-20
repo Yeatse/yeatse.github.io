@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="0x01 Abstract ClassJava、C++ 等 OOP 语言有一个抽象类的概念，即一个类实现了部分方法，另一部分的方法必须由继承它的子类来实现。Objective-C 在设计上没有这个概念，转而提供了用途类似的 协议，除了不能给方法加默认实现以外，与抽象类的用法大体相同。但是在实际项目中，让一个协议实现一些共通的方法还是很有必要的，比如很多类都遵守了某一个协议，而这个协议中某一个方法的">
+<meta name="keywords" content="iOS,Objective-C">
+<meta property="og:type" content="article">
+<meta property="og:title" content="给 Objective-C 中的 Protocol 加上默认的实现">
+<meta property="og:url" content="https://blog.yeatse.com/2016/06/20/default-implementation-for-oc-protocol/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="0x01 Abstract ClassJava、C++ 等 OOP 语言有一个抽象类的概念，即一个类实现了部分方法，另一部分的方法必须由继承它的子类来实现。Objective-C 在设计上没有这个概念，转而提供了用途类似的 协议，除了不能给方法加默认实现以外，与抽象类的用法大体相同。但是在实际项目中，让一个协议实现一些共通的方法还是很有必要的，比如很多类都遵守了某一个协议，而这个协议中某一个方法的">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.628Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="给 Objective-C 中的 Protocol 加上默认的实现">
+<meta name="twitter:description" content="0x01 Abstract ClassJava、C++ 等 OOP 语言有一个抽象类的概念，即一个类实现了部分方法，另一部分的方法必须由继承它的子类来实现。Objective-C 在设计上没有这个概念，转而提供了用途类似的 协议，除了不能给方法加默认实现以外，与抽象类的用法大体相同。但是在实际项目中，让一个协议实现一些共通的方法还是很有必要的，比如很多类都遵守了某一个协议，而这个协议中某一个方法的">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2016/06/20/default-implementation-for-oc-protocol/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>给 Objective-C 中的 Protocol 加上默认的实现 | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2016/06/20/default-implementation-for-oc-protocol/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">给 Objective-C 中的 Protocol 加上默认的实现
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2016-06-20 22:04:44" itemprop="dateCreated datePublished" datetime="2016-06-20T22:04:44+08:00">2016-06-20</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="0x01-Abstract-Class"><a href="#0x01-Abstract-Class" class="headerlink" title="0x01 Abstract Class"></a>0x01 Abstract Class</h2><p>Java、C++ 等 OOP 语言有一个<code>抽象类</code>的概念，即一个类实现了部分方法，另一部分的方法必须由继承它的子类来实现。Objective-C 在设计上没有这个概念，转而提供了用途类似的 <code>协议</code>，除了不能给方法加默认实现以外，与抽象类的用法大体相同。但是在实际项目中，让一个协议实现一些共通的方法还是很有必要的，比如很多类都遵守了某一个协议，而这个协议中某一个方法的实现大体上都一样的时候，在每一个子类内部都 copy 一份同样的代码就不太合适了。</p>
+<a id="more"></a>
+<p>一种规避 copy 的做法是把它的实现抽离到全局方法中，比如下面的协议：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@protocol</span> <span class="title">MyProtocol</span> &lt;<span class="title">NSObject</span>&gt;</span></span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)method1;</span><br><span class="line">- (<span class="keyword">void</span>)method2;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<p>如果所有子类的 <code>method2</code> 的实现都差不多，就可以将它抽到一个全局方法(或者一个单例类的方法)中：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> MyProtocolMethod2(<span class="keyword">id</span>&lt;MyProtocol&gt; instance) &#123;</span><br><span class="line">    <span class="comment">// Do with myprotocol...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>另一种办法是抛弃 <code>@protocol</code>，直接使用 <code>@interface</code>，然后使用文档说明的方式<code>约定</code>它是一个抽象类：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// MyBaseClass.h</span></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MyBaseClass</span> : <span class="title">NSObject</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/// 这个方法必须由子类重写</span></span><br><span class="line">- (<span class="keyword">void</span>)method1;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// 这个方法可以被子类重写</span></span><br><span class="line">- (<span class="keyword">void</span>)method2;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// MyBaseClass.m</span></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyBaseClass</span></span></span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)method1 &#123;</span><br><span class="line">    <span class="comment">// 如果没有重写就报错...</span></span><br><span class="line">    <span class="built_in">NSAssert</span>(method_getImplementation(class_getInstanceMethod(<span class="keyword">self</span>.class, _cmd)) !=</span><br><span class="line">             method_getImplementation(class_getInstanceMethod([MyBaseClass <span class="keyword">class</span>], _cmd)),</span><br><span class="line">             <span class="string">@"method1 must be overriden!"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)method2 &#123;</span><br><span class="line">    <span class="comment">// A default implementation...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<p>以上两个方法都可以达成目的，但都有一些缺陷：前一种方法把 MyProtocol 相关的代码放到了全局环境中，不优雅；后一种方法在编译阶段没有提示，需要由开发人员仔细阅读文档才能避免误用。<a href="http://stackoverflow.com/questions/4330656/how-do-i-provide-a-default-implementation-for-an-objective-c-protocol" target="_blank" rel="noopener">StackOverflow 的一篇答案</a>还提供了另一个方案：在每一个子类的 <code>+initialize</code> 方法中通过 <code>class_addMethod</code> 把协议的默认实现加到方法列表当中，但这样也略显繁琐。</p>
+<h2 id="0x02-EXTConcreteProtocol"><a href="#0x02-EXTConcreteProtocol" class="headerlink" title="0x02 EXTConcreteProtocol"></a>0x02 EXTConcreteProtocol</h2><p>一个第三方库 <a href="https://github.com/jspahrsummers/libextobjc" target="_blank" rel="noopener">libextobjc</a> 通过 <code>EXTConcreteProtocol</code> 神奇地实现了这个功能，使用方法与原生协议类似：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// MyProtocol.h</span></span><br><span class="line"><span class="class"><span class="keyword">@protocol</span> <span class="title">MyProtocol</span> &lt;<span class="title">NSObject</span>&gt;</span></span><br><span class="line"><span class="keyword">@required</span></span><br><span class="line">- (<span class="keyword">void</span>)method1;</span><br><span class="line"></span><br><span class="line">@concrete</span><br><span class="line">- (<span class="keyword">void</span>)method2;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// MyProtocol.m</span></span><br><span class="line">@concreteprotocol(MyProtocol)</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)method1 &#123;&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)method2 &#123;</span><br><span class="line">    <span class="comment">// A default implementation</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<p>这样声明以后，对于任何遵守 MyProtocol 协议的类，如果没有重写 <code>method2</code> 方法，都会有一个在 MyProtocol.m 中声明的默认实现。</p>
+<p>这个库为什么这么吊，<code>@concrete</code> 和 <code>@concreteprotocol</code> 到底做了什么。其实 <code>concrete</code> 只是 <code>optional</code> 的别名，为了提示调用者就算不重写这个方法也一定会有的，重点还是在 <code>concreteprotocol</code> 宏上。</p>
+<p>查看 EXTConcreteProtocol 源码可以知道，<code>@concreteprotocol(MyProtocol)</code> 这一行通过宏定义的方式生成了这样的一个包装类：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">MyProtocol_ProtocolMethodContainer</span> : <span class="title">NSObject</span> &lt;<span class="title">MyProtocol</span>&gt;</span></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">MyProtocol_ProtocolMethodContainer</span></span></span><br><span class="line"></span><br><span class="line">+ (<span class="keyword">void</span>)load &#123;</span><br><span class="line">    <span class="keyword">if</span> (!ext_addConcreteProtocol(objc_getProtocol(<span class="string">"MyProtocol"</span>), <span class="keyword">self</span>))</span><br><span class="line">        fprintf(stderr, <span class="string">"ERROR: Could not load concrete protocol %s\n"</span>, <span class="string">"MyProtocol"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">__attribute__((constructor))</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> ext_MyProtocol_inject (<span class="keyword">void</span>) &#123;</span><br><span class="line">    ext_loadConcreteProtocol(objc_getProtocol(<span class="string">"MyProtocol"</span>));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<p>其中 <code>ext_addConcreteProtocol</code> 在 <code>load</code> 方法中被调用，它的作用是把将要对 MyProtocol 进行的注入操作缓存到一个全局列表中，除此之外还有一些边界条件的判断和加锁什么的。</p>
+<p><code>__attribute__((constructor))</code> 是<a href="https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html" target="_blank" rel="noopener"> GCC 的一个编译器指令</a>（其实是 Clang 的指令，但我翻遍了 Clang 的官方文档并没有找到关于 constructor 的描述- -），被它标记的函数会在整个 Objective-C runtime 初始化完毕之后，在 <code>main()</code> 函数之前被调用。这时 <code>ext_loadConcreteProtocol</code> 函数会遍历 runtime 中所有的 Class，对其中每一个遵从 MyProtocol 协议的 Class 进行缓存过的注入操作：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (class_getInstanceMethod(metaclass, selector)) &#123;</span><br><span class="line">    <span class="comment">// it does exist, so don't overwrite it</span></span><br><span class="line">    <span class="keyword">continue</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// add this class method to the metaclass in question</span></span><br><span class="line">IMP imp = method_getImplementation(method);</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">char</span> *types = method_getTypeEncoding(method);</span><br><span class="line"><span class="keyword">if</span> (!class_addMethod(metaclass, selector, imp, types)) &#123;</span><br><span class="line">    fprintf(stderr, <span class="string">"ERROR: Could not implement class method +%s from concrete protocol %s on class %s\n"</span>,</span><br><span class="line">    sel_getName(selector), protocol_getName(protocol), class_getName(<span class="keyword">class</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>虽然调用层级很复杂，但最终还是调用了 <code>class_addMethod</code> 方法给 Class 自动加上了默认的实现，原理跟上面的 StackOverflow 给的答案是一样的。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+            <a href="/tags/Objective-C/" rel="tag"># Objective-C</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/06/13/expand-hit-area-for-uibutton-and-uicollectionviewcell/" rel="next" title="扩展 UIButton 和 UICollectionViewCell 的响应区域">
+                <i class="fa fa-chevron-left"></i> 扩展 UIButton 和 UICollectionViewCell 的响应区域
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/07/19/find-memory-leaks-in-ios-project/" rel="prev" title="检测 iOS 项目中的内存泄漏">
+                检测 iOS 项目中的内存泄漏 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-Abstract-Class"><span class="nav-number">1.</span> <span class="nav-text">0x01 Abstract Class</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-EXTConcreteProtocol"><span class="nav-number">2.</span> <span class="nav-text">0x02 EXTConcreteProtocol</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

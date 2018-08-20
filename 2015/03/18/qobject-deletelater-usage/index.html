@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="最近在做一个文件批量上传的工具，要实现暂停继续、断点续传等功能。利用Qt自带的QtNetwork模块，完成这些需求并没有费多少周章，主要思路就是将文件分块，然后用while循环依次传输。具体实现代码比较复杂，简化了一下大致是这样子的： 1234567891011121314151617181920212223242526272829303132333435363738394041424344454">
+<meta name="keywords" content="Qt">
+<meta property="og:type" content="article">
+<meta property="og:title" content="有关QObject::deleteLater()的一些事">
+<meta property="og:url" content="https://blog.yeatse.com/2015/03/18/qobject-deletelater-usage/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="最近在做一个文件批量上传的工具，要实现暂停继续、断点续传等功能。利用Qt自带的QtNetwork模块，完成这些需求并没有费多少周章，主要思路就是将文件分块，然后用while循环依次传输。具体实现代码比较复杂，简化了一下大致是这样子的： 1234567891011121314151617181920212223242526272829303132333435363738394041424344454">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.631Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="有关QObject::deleteLater()的一些事">
+<meta name="twitter:description" content="最近在做一个文件批量上传的工具，要实现暂停继续、断点续传等功能。利用Qt自带的QtNetwork模块，完成这些需求并没有费多少周章，主要思路就是将文件分块，然后用while循环依次传输。具体实现代码比较复杂，简化了一下大致是这样子的： 1234567891011121314151617181920212223242526272829303132333435363738394041424344454">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2015/03/18/qobject-deletelater-usage/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>有关QObject::deleteLater()的一些事 | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2015/03/18/qobject-deletelater-usage/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">有关QObject::deleteLater()的一些事
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2015-03-18 22:12:07" itemprop="dateCreated datePublished" datetime="2015-03-18T22:12:07+08:00">2015-03-18</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>最近在做一个文件批量上传的工具，要实现暂停继续、断点续传等功能。利用Qt自带的QtNetwork模块，完成这些需求并没有费多少周章，主要思路就是将文件分块，然后用while循环依次传输。具体实现代码比较复杂，简化了一下大致是这样子的：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">chunkUpload</span><span class="params">(UploadItem *item, <span class="keyword">const</span> qint64 &amp;chunkSize)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Q_ASSERT(item != <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">    QNetworkRequest request;</span><br><span class="line">    QNetworkReply* reply;</span><br><span class="line">    QHttpMultiPart* multiPart = <span class="keyword">new</span> QHttpMultiPart(QHttpMultiPart::FormDataType);</span><br><span class="line">    QBuffer* buffer = <span class="keyword">new</span> QBuffer(multiPart);</span><br><span class="line">    QEventLoop loop;</span><br><span class="line">    QTimer timer;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... append fields to multiPart ...</span></span><br><span class="line"></span><br><span class="line">    request.setUrl(UPLOAD_URL);</span><br><span class="line">    reply = networkManager-&gt;post(request, multiPart);</span><br><span class="line">    <span class="comment">// 保证reply销毁的时候multiPart和buffer也会随之销毁。</span></span><br><span class="line">    multiPart-&gt;setParent(reply);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 加入一个消息循环，reply传输完成前进程会一直阻塞在这里；并设置一个定时器，如果传输超时则强制跳出消息循环</span></span><br><span class="line">    timer.setSingleShot(<span class="literal">true</span>);</span><br><span class="line">    timer.setInterval(NetworkTimeout);</span><br><span class="line">    connect(reply, SIGNAL(uploadProgress(qint64,qint64)), &amp;timer, SLOT(start()));</span><br><span class="line">    connect(reply, SIGNAL(downloadProgress(qint64,qint64)), &amp;timer, SLOT(start()));</span><br><span class="line">    connect(&amp;timer, &amp;QTimer::timeout, &amp;loop, &amp;QEventLoop::quit);</span><br><span class="line">    connect(reply, &amp;QNetworkReply::finished, &amp;loop, &amp;QEventLoop::quit);</span><br><span class="line">    timer.start();</span><br><span class="line">    loop.exec();</span><br><span class="line"></span><br><span class="line">    reply-&gt;deleteLater();</span><br><span class="line">    <span class="keyword">if</span> (reply-&gt;isRunning())</span><br><span class="line">        reply-&gt;<span class="built_in">abort</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (reply-&gt;error() != QNetworkReply::NoError)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... deal with the reply ...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">upload</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (NOT_FINISHED) &#123;</span><br><span class="line">        chunkUpload(item, CHUNK_SIZE);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>程序编译运行过程很顺利，测试的时候也没发现什么问题。但后来我随手上传了一个1G大小的文件，发现每次文件上传到70%左右的时候程序就崩溃了，小文件就没这个问题。急忙打开任务管理器，这才发现上传文件的时候，程序内存占用会随着上传进度的增加而增加，上传1G文件的时候内存最多会吃到1.5G，这时候程序申请不到更多内存了，我又没做检查，当然就会崩溃掉。</p>
+<a id="more"></a>
+<p>限制上传文件大小这种事我是不会做的，毕竟一个上传工具占用内存比PS都高实在不科学。注意到文件上传完成之后内存会立即回到正常值，显然原因并不是我忘记释放内存而是内存释放不及时，这样看来唯一可疑的地方就是上面<code>chunkUpload</code>函数里面的<code>reply-&gt;deleteLater()</code>那一句了吧。于是我写了个方法监听reply的销毁时机，果然每一块上传完成之后reply没有销毁，直到文件全部上传完毕之后才输出一大堆“I’m destroyed…”的信息。</p>
+<p>根据Qt文档的说明，<code>QObject::deleteLater()</code>并没有将对象立即销毁，而是向主消息循环发送了一个event，下一次主消息循环收到这个event之后才会销毁对象。我在这里使用deleteLater只是因为Qt文档里推荐这么做而已，其他并没多想。是这样的话一切都说得通了，因为<code>chunkUpload</code>函数是在一个while循环里，程序还没来得及处理这个event就立即进行下一块传输了，传输过程中生成的<code>QNetworkReply</code>以及它关联的<code>QBuffer</code>、<code>QHttpMultiPart</code>当然也就来不及删除了。崩溃原因找到了。你不就是来不及处理销毁对象的event嘛，手动让你处理下不就行了？于是修改<code>upload</code>函数代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">upload</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (NOT_FINISHED) &#123;</span><br><span class="line">        chunkUpload(item, CHUNK_SIZE);</span><br><span class="line">        qApp-&gt;processEvents(); <span class="comment">// 让主程序把消息队列中的QEvent处理完</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>编译、运行，内存占用依然没有改变，看样子加这一行用处不大。再次查询<code>QObject::deleteLater()</code>的文档，发现这样一句话：</p>
+<blockquote>
+<p>…for the object to be deleted, the control must return to the event loop from which deleteLater() was called.</p>
+</blockquote>
+<p>这么说来，<code>deleteLater</code>销毁<code>QObject</code>的唯一时机就是程序返回主消息循环以后了呢。无奈只能放弃<code>deleteLater</code>。考虑到每次return前都要手动delete亦或是使用goto语句实在都不够优雅，所以利用Qt自带的<code>QScopedPointer</code>，修改<code>chunkUpload</code>函数如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">chunkUpload</span><span class="params">(UploadItem *item, <span class="keyword">const</span> qint64 &amp;chunkSize)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Q_ASSERT(item != <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">    QNetworkRequest request;</span><br><span class="line">    QScopedPointer&amp;lt;QNetworkReply&gt; reply;</span><br><span class="line">    QHttpMultiPart* multiPart = <span class="keyword">new</span> QHttpMultiPart(QHttpMultiPart::FormDataType);</span><br><span class="line">    QBuffer* buffer = <span class="keyword">new</span> QBuffer(multiPart);</span><br><span class="line">    QEventLoop loop;</span><br><span class="line">    QTimer timer;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... append fields to multiPart ...</span></span><br><span class="line"></span><br><span class="line">    request.setUrl(UPLOAD_URL);</span><br><span class="line">    reply.reset(networkManager-&gt;post(request, multiPart));</span><br><span class="line">    multiPart-&gt;setParent(reply.data());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... event loop ...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (reply-&gt;isRunning())</span><br><span class="line">        reply-&gt;<span class="built_in">abort</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (reply-&gt;error() != QNetworkReply::NoError)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... deal with the reply ...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>问题解决。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Qt/" rel="tag"># Qt</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/03/03/qt-singleton-implementation/" rel="next" title="Qt中单例模式的实现">
+                <i class="fa fa-chevron-left"></i> Qt中单例模式的实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/05/17/damn-php-update/" rel="prev" title="再手贱就剁手">
+                再手贱就剁手 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

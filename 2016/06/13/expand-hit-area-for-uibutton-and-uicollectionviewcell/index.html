@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="0x01 前言问题由一个项目需求引起。设计MM给的图大概像这样：  如上图所示，列表的内容由服务器传回，且用户可编辑，显然这样的界面应该用 UICollectionView 来搭建。实现关闭按钮则需要在 UICollectionViewCell 的右上角添加一个 UIButton，并且要将 Cell 的 clipsToBounds 属性设置为 NO 以避免按钮被切掉一部分。 界面搭建好了，但默认状">
+<meta name="keywords" content="iOS,Objective-C,UIKit,Runtime">
+<meta property="og:type" content="article">
+<meta property="og:title" content="扩展 UIButton 和 UICollectionViewCell 的响应区域">
+<meta property="og:url" content="https://blog.yeatse.com/2016/06/13/expand-hit-area-for-uibutton-and-uicollectionviewcell/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="0x01 前言问题由一个项目需求引起。设计MM给的图大概像这样：  如上图所示，列表的内容由服务器传回，且用户可编辑，显然这样的界面应该用 UICollectionView 来搭建。实现关闭按钮则需要在 UICollectionViewCell 的右上角添加一个 UIButton，并且要将 Cell 的 clipsToBounds 属性设置为 NO 以避免按钮被切掉一部分。 界面搭建好了，但默认状">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/snapshot.png">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/snapshot2.png">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.629Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="扩展 UIButton 和 UICollectionViewCell 的响应区域">
+<meta name="twitter:description" content="0x01 前言问题由一个项目需求引起。设计MM给的图大概像这样：  如上图所示，列表的内容由服务器传回，且用户可编辑，显然这样的界面应该用 UICollectionView 来搭建。实现关闭按钮则需要在 UICollectionViewCell 的右上角添加一个 UIButton，并且要将 Cell 的 clipsToBounds 属性设置为 NO 以避免按钮被切掉一部分。 界面搭建好了，但默认状">
+<meta name="twitter:image" content="https://blog.yeatse.com/images/2016/snapshot.png">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2016/06/13/expand-hit-area-for-uibutton-and-uicollectionviewcell/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>扩展 UIButton 和 UICollectionViewCell 的响应区域 | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2016/06/13/expand-hit-area-for-uibutton-and-uicollectionviewcell/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">扩展 UIButton 和 UICollectionViewCell 的响应区域
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2016-06-13 20:56:29" itemprop="dateCreated datePublished" datetime="2016-06-13T20:56:29+08:00">2016-06-13</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="0x01-前言"><a href="#0x01-前言" class="headerlink" title="0x01 前言"></a>0x01 前言</h2><p>问题由一个项目需求引起。设计MM给的图大概像这样：</p>
+<p><img src="/images/2016/snapshot.png" alt="snapshot"></p>
+<p>如上图所示，列表的内容由服务器传回，且用户可编辑，显然这样的界面应该用 <code>UICollectionView</code> 来搭建。实现关闭按钮则需要在 <code>UICollectionViewCell</code> 的右上角添加一个 <code>UIButton</code>，并且要将 Cell 的 <code>clipsToBounds</code> 属性设置为 <code>NO</code> 以避免按钮被切掉一部分。</p>
+<p>界面搭建好了，但默认状态下 UIButton 的点击响应范围跟它的显示区域一样小，导致这个按钮很难被点到，因此首先要解决的是这个按钮的热区扩展问题。</p>
+<a id="more"></a>
+<h2 id="0x02-UIButton-的热区扩展"><a href="#0x02-UIButton-的热区扩展" class="headerlink" title="0x02 UIButton 的热区扩展"></a>0x02 UIButton 的热区扩展</h2><p>网络上介绍 UIButton 响应区域扩展的文章有很多，但大多数都是继承 UIButton 然后重写 <code>pointInside:withEvent:</code> 方法。实际上这种子类继承的方法在很多场景下是不合适的，因为这意味着每次用到这个功能都要将系统 UIButton 换成自己的子类。一个更符合 <em>Objective-C Style</em> 的方法是增加一个 UIButton 的 <code>Category</code>，然后在<strong>不影响控件默认的行为</strong>的情况下在 Category 里做文章。</p>
+<p>新建一个 UIButton+ExpandHitArea 分类，像这样在头文件中添加一个 <code>hitTestEdgeInsets</code> 属性，用来配置热区扩展(根据语意实际上是缩小)的范围：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">UIButton</span> (<span class="title">ExpandHitArea</span>)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">nonatomic</span>) <span class="built_in">UIEdgeInsets</span> hitTestEdgeInsets;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<p>在 .m 文件中，我们将 <code>pointInside:withEvent:</code> 替换成修改过的方法：先将 <code>hitTestEdgeInsets</code> 的值与 <code>UIEdgeInsetsZero</code> 相比较，如果不等，则调用我们自己的扩展热区的逻辑；如果相等，则调用系统默认的 <code>pointInside:withEvent:</code> 方法，就像什么事也没发生过一样。最终代码如下：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">UIButton</span> (<span class="title">ExpandHitArea</span>)</span></span><br><span class="line"></span><br><span class="line">+ (<span class="keyword">void</span>)load &#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> onceToken;</span><br><span class="line">    <span class="built_in">dispatch_once</span>(&amp;onceToken, ^&#123;</span><br><span class="line">        YTSwizzleMethod([<span class="keyword">self</span> <span class="keyword">class</span>], <span class="keyword">@selector</span>(pointInside:withEvent:), <span class="keyword">@selector</span>(yt_pointInside:withEvent:));</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="built_in">UIEdgeInsets</span>)hitTestEdgeInsets &#123;</span><br><span class="line">    <span class="built_in">NSValue</span>* value = objc_getAssociatedObject(<span class="keyword">self</span>, _cmd);</span><br><span class="line">    <span class="built_in">UIEdgeInsets</span> insets = <span class="built_in">UIEdgeInsetsZero</span>;</span><br><span class="line">    [value getValue:&amp;insets];</span><br><span class="line">    <span class="keyword">return</span> insets;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)setHitTestEdgeInsets:(<span class="built_in">UIEdgeInsets</span>)hitTestEdgeInsets &#123;</span><br><span class="line">    <span class="built_in">NSValue</span>* value = [<span class="built_in">NSValue</span> value:&amp;hitTestEdgeInsets withObjCType:<span class="keyword">@encode</span>(<span class="built_in">UIEdgeInsets</span>)];</span><br><span class="line">    objc_setAssociatedObject(<span class="keyword">self</span>, <span class="keyword">@selector</span>(hitTestEdgeInsets), value, OBJC_ASSOCIATION_RETAIN_NONATOMIC);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="built_in">BOOL</span>)yt_pointInside:(<span class="built_in">CGPoint</span>)point withEvent:(<span class="built_in">UIEvent</span>*)event &#123;</span><br><span class="line">    <span class="built_in">UIEdgeInsets</span> insets = <span class="keyword">self</span>.hitTestEdgeInsets;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">UIEdgeInsetsEqualToEdgeInsets</span>(insets, <span class="built_in">UIEdgeInsetsZero</span>)) &#123;</span><br><span class="line">        <span class="keyword">return</span> [<span class="keyword">self</span> yt_pointInside:point withEvent:event];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">CGRect</span> hitBounds = <span class="built_in">UIEdgeInsetsInsetRect</span>(<span class="keyword">self</span>.bounds, insets);</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">CGRectContainsPoint</span>(hitBounds, point);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<p>其中在 <code>load</code> 方法里的 <code>YTSwizzleMethod</code> 是 <a href="http://nshipster.com/method-swizzling/" target="_blank" rel="noopener">Method Swizzling</a> 的具体实现，因为这段代码经常被用到所以我把它抽了出来，以下是函数的内容：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> YTSwizzleMethod(Class cls, SEL originalSelector, SEL swizzledSelector) &#123;</span><br><span class="line">    Method originalMethod = class_getInstanceMethod(cls, originalSelector);</span><br><span class="line">    Method swizzledMethod = class_getInstanceMethod(cls, swizzledSelector);</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">BOOL</span> didAddMethod = class_addMethod(cls, originalSelector, method_getImplementation(swizzledMethod), method_getTypeEncoding(swizzledMethod));</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (didAddMethod) &#123;</span><br><span class="line">        class_replaceMethod(cls, swizzledSelector, method_getImplementation(originalMethod), method_getTypeEncoding(originalMethod));</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        method_exchangeImplementations(originalMethod, swizzledMethod);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在工程中引入这个 Category 之后，我们对任意一个 UIButton 设置它的 hitTestEdgeInsets 属性，都可以将它的点击响应区域扩大或缩小。在本文的例子里，扩展 12 pt 差不多是个合适的值：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_closeButton.hitTestEdgeInsets = <span class="built_in">UIEdgeInsetsMake</span>(<span class="number">-12</span>, <span class="number">-12</span>, <span class="number">-12</span>, <span class="number">-12</span>);</span><br></pre></td></tr></table></figure>
+<h2 id="0x03-UICollectionViewCell-的响应区域修正"><a href="#0x03-UICollectionViewCell-的响应区域修正" class="headerlink" title="0x03 UICollectionViewCell 的响应区域修正"></a>0x03 UICollectionViewCell 的响应区域修正</h2><p><img src="/images/2016/snapshot2.png" alt="snapshot"></p>
+<p>如图所示，按照上一段的步骤配置好以后，按钮的响应区域理应变成图中整块高亮的部分，但实际运行后真正的响应区域只有左下角的 A 部分。这是因为 UIKit 在检测点击响应区域时，首先询问的是父控件的 <code>pointInside:withEvent:</code> 方法，如果返回 <code>NO</code>，那么 UIKit 就认为点击区域在整个控件范围之外，不会继续遍历子控件，因此 Cell 的响应区域也需要跟随按钮一起扩展。除此之外我们还需要屏蔽掉 Cell 本身的事件响应，以防下一个 Cell 覆盖掉了上一个 Button 扩展后的热区 (图中 B 区域)。所以重写 UICollectionViewCell 的两个相关方法，内容如下：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="built_in">UIView</span> *)hitTest:(<span class="built_in">CGPoint</span>)point withEvent:(<span class="built_in">UIEvent</span> *)event &#123;</span><br><span class="line">    <span class="built_in">CGPoint</span> pointInButton = [<span class="keyword">self</span> convertPoint:point toView:_closeButton];</span><br><span class="line">    <span class="keyword">return</span> [_closeButton pointInside:pointInButton withEvent:event] ? _closeButton : <span class="literal">nil</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="built_in">BOOL</span>)pointInside:(<span class="built_in">CGPoint</span>)point withEvent:(<span class="built_in">UIEvent</span> *)event &#123;</span><br><span class="line">    <span class="built_in">CGPoint</span> pointInButton = [<span class="keyword">self</span> convertPoint:point toView:_closeButton];</span><br><span class="line">    <span class="keyword">return</span> [_closeButton pointInside:pointInButton withEvent:event];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+            <a href="/tags/Objective-C/" rel="tag"># Objective-C</a>
+          
+            <a href="/tags/UIKit/" rel="tag"># UIKit</a>
+          
+            <a href="/tags/Runtime/" rel="tag"># Runtime</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/04/25/fix-unrecognized-selector-error-using-runtime/" rel="next" title="使用 Objective-C Runtime 解决 unrecognized selector 错误">
+                <i class="fa fa-chevron-left"></i> 使用 Objective-C Runtime 解决 unrecognized selector 错误
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/06/20/default-implementation-for-oc-protocol/" rel="prev" title="给 Objective-C 中的 Protocol 加上默认的实现">
+                给 Objective-C 中的 Protocol 加上默认的实现 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-前言"><span class="nav-number">1.</span> <span class="nav-text">0x01 前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-UIButton-的热区扩展"><span class="nav-number">2.</span> <span class="nav-text">0x02 UIButton 的热区扩展</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-UICollectionViewCell-的响应区域修正"><span class="nav-number">3.</span> <span class="nav-text">0x03 UICollectionViewCell 的响应区域修正</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

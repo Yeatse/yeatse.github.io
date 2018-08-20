@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="最近把公司的项目从 UIWebView 迁移到了 WKWebView，因为之前大体上还是遵从了 Apple 的 API 没有过度地去 hack，而且 WebViewJavascriptBridge 也同样支持 WKWebView，所以迁移过程没有想象中那么痛苦，只要把 UIWebViewDelegate 的方法改成 WKUIDelegate 和 WKNavigationDelegate 对应方法就">
+<meta name="keywords" content="iOS,NSURLProtocol,WebKit">
+<meta property="og:type" content="article">
+<meta property="og:title" content="让 WKWebView 支持 NSURLProtocol">
+<meta property="og:url" content="https://blog.yeatse.com/2016/10/26/support-nsurlprotocol-in-wkwebview/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="最近把公司的项目从 UIWebView 迁移到了 WKWebView，因为之前大体上还是遵从了 Apple 的 API 没有过度地去 hack，而且 WebViewJavascriptBridge 也同样支持 WKWebView，所以迁移过程没有想象中那么痛苦，只要把 UIWebViewDelegate 的方法改成 WKUIDelegate 和 WKNavigationDelegate 对应方法就">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/14774810372171.jpg">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.632Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="让 WKWebView 支持 NSURLProtocol">
+<meta name="twitter:description" content="最近把公司的项目从 UIWebView 迁移到了 WKWebView，因为之前大体上还是遵从了 Apple 的 API 没有过度地去 hack，而且 WebViewJavascriptBridge 也同样支持 WKWebView，所以迁移过程没有想象中那么痛苦，只要把 UIWebViewDelegate 的方法改成 WKUIDelegate 和 WKNavigationDelegate 对应方法就">
+<meta name="twitter:image" content="https://blog.yeatse.com/images/2016/14774810372171.jpg">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2016/10/26/support-nsurlprotocol-in-wkwebview/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>让 WKWebView 支持 NSURLProtocol | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2016/10/26/support-nsurlprotocol-in-wkwebview/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">让 WKWebView 支持 NSURLProtocol
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2016-10-26 23:53:25" itemprop="dateCreated datePublished" datetime="2016-10-26T23:53:25+08:00">2016-10-26</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>最近把公司的项目从 UIWebView 迁移到了 WKWebView，因为之前大体上还是遵从了 Apple 的 API 没有过度地去 hack，而且 <a href="https://github.com/marcuswestin/WebViewJavascriptBridge" target="_blank" rel="noopener">WebViewJavascriptBridge</a> 也同样支持 WKWebView，所以迁移过程没有想象中那么痛苦，只要把 UIWebViewDelegate 的方法改成 WKUIDelegate 和 WKNavigationDelegate 对应方法就好了。</p>
+<a id="more"></a>
+<p>但是在 WKWebView 已经出现了三年的今天，UIWebView 还没有被标记为 deprecated，我想 Apple 一定也和很多开发者一样，觉得 WKWebView 还没有完善到能完全替代 UIWebView 的程度。比如其中一个痛点——对请求拦截的支持，正常情况下，按照下面的方式注册一个 NSURLProtocol 子类，就可以对 app 内所有的网络请求进行 <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack" target="_blank" rel="noopener">MitM</a> 了：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[<span class="built_in">NSURLProtocol</span> registerClass:[AwesomeURLProtocol <span class="keyword">class</span>]];</span><br></pre></td></tr></table></figure>
+<p>但 WKWebView 中的请求却完全不遵从这一规则，除了一开始会调用一下 <code>+ [NSURLProtocol canInitWithRequest:]</code> 方法，之后的整个请求流程似乎就与 NSURLProtocol 完全无关了。关于这一点，网络上文章一般都解释说 WKWebView 的请求是在单独的进程里，所以不走 NSURLProtocol。</p>
+<p>既然 WKWebView 不走 NSURLProtocol，那为什么还要在一开始调一下 <code>canInitWithRequest:</code> 呢？更令我好奇的是从 WebKit.framework dump 出的头文件能看出，有几个类（<a href="https://github.com/JaviSoto/iOS10-Runtime-Headers/blob/master/Frameworks/WebKit.framework/WKCustomProtocol.h" target="_blank" rel="noopener">WKCustomProtocol</a>、<a href="https://github.com/JaviSoto/iOS10-Runtime-Headers/blob/master/Frameworks/WebKit.framework/WKCustomProtocolLoader.h" target="_blank" rel="noopener">WKCustomProtocolLoader</a>）明显与 NSURLProtocol 有关，说明 WKWebView 很可能是支持 NSURLProtocol 的，只是出于某种原因没开放而已，于是我决定翻 WebKit 的<a href="https://github.com/WebKit/webkit" target="_blank" rel="noopener">源码</a>一探究竟。</p>
+<h2 id="WKBrowsingContextController"><a href="#WKBrowsingContextController" class="headerlink" title="WKBrowsingContextController"></a>WKBrowsingContextController</h2><p>翻 WebKit 源码的过程就不细说了，光从 GitHub 上拉源码到本地就花了我几个 G 的 ss 流量……总之翻到最后，我在一项单元测试 <a href="https://github.com/WebKit/webkit/blob/master/Tools/TestWebKitAPI/cocoa/TestProtocol.mm" target="_blank" rel="noopener">TestProtocol.mm</a> 中看到了 NSURLProtocol 熟悉的身影：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">+ (<span class="keyword">void</span>)registerWithScheme:(<span class="built_in">NSString</span> *)scheme</span><br><span class="line">&#123;</span><br><span class="line">    testScheme = [scheme <span class="keyword">retain</span>];</span><br><span class="line">    [<span class="built_in">NSURLProtocol</span> registerClass:[<span class="keyword">self</span> <span class="keyword">class</span>]];</span><br><span class="line"><span class="meta">#if WK_API_ENABLED</span></span><br><span class="line">    [<span class="built_in">WKBrowsingContextController</span> registerSchemeForCustomProtocol:testScheme];</span><br><span class="line"><span class="meta">#endif</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从 <code>registerSchemeForCustomProtocol:</code> 这个方法名来猜测，它的作用的应该是注册一个自定义的 scheme，这样对于 WebKit 进程的所有网络请求，都会先检查是否有匹配的 scheme，有的话再走主进程的 NSURLProtocol 这一套流程，猜测这么做可能是为了保证效率 (NSURLRequest 的 HTTPBody 属性在 WKWebView 中被忽略了应该也出于这个原因)，毕竟 IPC 代价挺高的。后续翻 <code>WebKit::CustomProtocolManager</code> 和 <code>WebKit::WebProcessPool</code> 等相关源码也印证了这个猜想。</p>
+<p>看上去没什么问题，于是按照 TestCase 里的例子尝试了一下：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Class cls = <span class="built_in">NSClassFromString</span>(<span class="string">@"WKBrowsingContextController"</span>);</span><br><span class="line">SEL sel = <span class="built_in">NSSelectorFromString</span>(<span class="string">@"registerSchemeForCustomProtocol:"</span>);</span><br><span class="line"><span class="keyword">if</span> ([(<span class="keyword">id</span>)cls respondsToSelector:sel]) &#123;</span><br><span class="line">    <span class="comment">// 把 http 和 https 请求交给 NSURLProtocol 处理</span></span><br><span class="line">    [(<span class="keyword">id</span>)cls performSelector:sel withObject:<span class="string">@"http"</span>];</span><br><span class="line">    [(<span class="keyword">id</span>)cls performSelector:sel withObject:<span class="string">@"https"</span>];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 这下 AwesomeURLProtocol 就可以用啦</span></span><br><span class="line">[<span class="built_in">NSURLProtocol</span> registerClass:[AwesomeURLProtocol <span class="keyword">class</span>]];</span><br></pre></td></tr></table></figure>
+<p>现在 WKWebView 中的所有请求都可以被 NSURLProtocol 修改了：<br><img src="/images/2016/14774810372171.jpg" alt="14774810372171-w375"></p>
+<h2 id="关于私有-API"><a href="#关于私有-API" class="headerlink" title="关于私有 API"></a>关于私有 API</h2><p>按照 @sunnyxx 的<a href="http://blog.sunnyxx.com/2015/06/07/fullscreen-pop-gesture/" target="_blank" rel="noopener">总结</a>，Apple 检查私有 API 的使用，大概会采取下面几种手段：</p>
+<ul>
+<li>是否 link 了私有 framework 或者公开 framework 中的私有符号，这可以防止开发者把私有 header 都 dump 出来供程序直接调用。</li>
+<li>同上，使用@selector(_private_sel)加上-performSelector:的方式直接调用私有 API。</li>
+<li>扫描所有符号，查看是否有继承自私有类，重载私有方法，方法名是否有重合。</li>
+<li>扫描所有string，看字符串常量段是否出现和私有 API 对应的。</li>
+</ul>
+<p>而本文所介绍的方法，一共有两个地方使用了私有 API：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Class cls = <span class="built_in">NSClassFromString</span>(<span class="string">@"WKBrowsingContextController"</span>);</span><br><span class="line">SEL sel = <span class="built_in">NSSelectorFromString</span>(<span class="string">@"registerSchemeForCustomProtocol:"</span>);</span><br></pre></td></tr></table></figure>
+<p>这两个地方都是通过反射的方式拿到了私有的 class/selector，对应上面的第四条。其中第二行那个还好说，因为 <code>registerSchemeForCustomProtocol</code> 这个名词看上去相当普通，如果把这种字符串也禁掉了的话会误伤一大票开发者，所以有风险的主要是 <code>WKBrowsingContextController</code> 这个字符串，要前缀有前缀，要 camel case 有 camel case，再跟私有 class 名撞车的话就跟可能被拒了。</p>
+<p>那么怎样绕过这个字符串呢？查询 <a href="https://github.com/JaviSoto/iOS10-Runtime-Headers/blob/master/Frameworks/WebKit.framework/WKWebView.h" target="_blank" rel="noopener">WKWebView.h</a> 可以看到，有个方法 <code>- browsingContextController</code> 的方法名跟 <code>WKBrowsingContextController</code> 长得很像，通过 KVC 取出来（没错，KVC 不但可以取 property 取 ivar，还可以取无入参 selector 的返回值）发现它就是 <code>WKBrowsingContextController</code> 的一个实例，这样一来这个私有类就可以通过 KVC 的方式来得到了：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Class cls = [[[<span class="built_in">WKWebView</span> new] valueForKey:<span class="string">@"browsingContextController"</span>] <span class="keyword">class</span>];</span><br></pre></td></tr></table></figure>
+<p>比起粗暴地 <code>NSClassFromString</code>，使用 <code>valueForKey</code> 的方法安全了许多。当然，如果还有什么要担心的话，这些字符串也可以不明着写出来，只要运行时算出来就行，比如用 base64 编码啊，图片资源里藏一段啊，甚至通过服务器下发……既然到了这个程度，苹果的静态扫描就很难再 hold 住了。</p>
+<p>使用私有 API 的另一风险是兼容性问题，比如上面的 <code>browsingContextController</code> 就只能在 iOS 8.4 以后才能用，反注册 scheme 的方法 <code>unregisterSchemeForCustomProtocol:</code> 也是在 iOS 8.4 以后才被添加进来的，要支持 iOS 8.0 ~ 8.3 机型的话，只能通过动态生成字符串的方式拿到 WKBrowsingContextController，而且还不能反注册，不过这些问题都不大。至于向后兼容，这个也不用太担心，因为 iOS 发布新版本之前都会有开发者预览版的，那个时候再测一下也不迟。对于本文的例子来说，如果将来哪个 iOS 版本移除了这个 API，那很可能是因为官方提供了完整的解决方案，到那时候自然也不需要本文介绍的方法了。</p>
+<p>最后，我写了一个 Demo 放到了 GitHub 上，支持 iOS 8.4+，代码经测试已通过 App Store 审核：<br><a href="https://github.com/yeatse/NSURLProtocol-WebKitSupport" target="_blank" rel="noopener">https://github.com/yeatse/NSURLProtocol-WebKitSupport</a></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+            <a href="/tags/NSURLProtocol/" rel="tag"># NSURLProtocol</a>
+          
+            <a href="/tags/WebKit/" rel="tag"># WebKit</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/10/08/using-3d-touch-with-uiwebview/" rel="next" title="UIWebView 与 3D Touch 的自定义交互">
+                <i class="fa fa-chevron-left"></i> UIWebView 与 3D Touch 的自定义交互
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/09/29/react-native-crash-rctfont-sigabrt/" rel="prev" title="React Native 一处诡异 crash: RCTFont SIGABRT">
+                React Native 一处诡异 crash: RCTFont SIGABRT <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#WKBrowsingContextController"><span class="nav-number">1.</span> <span class="nav-text">WKBrowsingContextController</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关于私有-API"><span class="nav-number">2.</span> <span class="nav-text">关于私有 API</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

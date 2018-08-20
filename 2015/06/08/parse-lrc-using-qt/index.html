@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="网易云音乐的歌词格式共分三种：不含时间标签的纯文本格式、每一句歌词带有一个时间标签的格式，以及每一个字都带有一个时间标签的卡拉OK格式。对于第一种格式，只需把源文本按照换行符\n分割开来即可，而第三种格式自己写的程序里用不到所以先不管它，所以这里只讨论第二种格式。 按照维基百科的说明，标准的LRC格式歌词，每一行开头都有一个形如[mm:ss.xx]形式的时间标签，实际上有的歌词每一行开头可能有多个">
+<meta name="keywords" content="Qt">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Qt实现LRC歌词的解析">
+<meta property="og:url" content="https://blog.yeatse.com/2015/06/08/parse-lrc-using-qt/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="网易云音乐的歌词格式共分三种：不含时间标签的纯文本格式、每一句歌词带有一个时间标签的格式，以及每一个字都带有一个时间标签的卡拉OK格式。对于第一种格式，只需把源文本按照换行符\n分割开来即可，而第三种格式自己写的程序里用不到所以先不管它，所以这里只讨论第二种格式。 按照维基百科的说明，标准的LRC格式歌词，每一行开头都有一个形如[mm:ss.xx]形式的时间标签，实际上有的歌词每一行开头可能有多个">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.631Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Qt实现LRC歌词的解析">
+<meta name="twitter:description" content="网易云音乐的歌词格式共分三种：不含时间标签的纯文本格式、每一句歌词带有一个时间标签的格式，以及每一个字都带有一个时间标签的卡拉OK格式。对于第一种格式，只需把源文本按照换行符\n分割开来即可，而第三种格式自己写的程序里用不到所以先不管它，所以这里只讨论第二种格式。 按照维基百科的说明，标准的LRC格式歌词，每一行开头都有一个形如[mm:ss.xx]形式的时间标签，实际上有的歌词每一行开头可能有多个">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2015/06/08/parse-lrc-using-qt/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Qt实现LRC歌词的解析 | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2015/06/08/parse-lrc-using-qt/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Qt实现LRC歌词的解析
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2015-06-08 02:16:12" itemprop="dateCreated datePublished" datetime="2015-06-08T02:16:12+08:00">2015-06-08</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>网易云音乐的歌词格式共分三种：不含时间标签的纯文本格式、每一句歌词带有一个时间标签的格式，以及每一个字都带有一个时间标签的卡拉OK格式。对于第一种格式，只需把源文本按照换行符<code>\n</code>分割开来即可，而第三种格式自己写的程序里用不到所以先不管它，所以这里只讨论第二种格式。</p>
+<p>按照<a href="http://zh.wikipedia.org/wiki/LRC%E6%A0%BC%E5%BC%8F" target="_blank" rel="noopener">维基百科的说明</a>，标准的LRC格式歌词，每一行开头都有一个形如<code>[mm:ss.xx]</code>形式的时间标签，实际上有的歌词每一行开头可能有多个时间标签，表示这一句可能会在不同时间点重复多次。以此为标准，实现解析的思路如下：</p>
+<ol>
+<li>查找第一个形如[mm:ss.xx]的时间标签。如果找不到，就把文本按照换行符简单分割，完成解析；找到的话就记录标签的位置并执行步骤2。</li>
+<li>查找下一个时间标签的位置。如果找不到，就把最后一个时间标签之后的全部文本作为最后一句歌词，保存到结果中，执行步骤4；找到的话就记录标签的位置并执行步骤3。</li>
+<li>比较当前标签和上一个标签的位置。如果是紧挨的话，表示这两个标签代表同一句歌词，重复步骤2；如果不是紧挨的，就把两个标签之间的文本作为歌词保存到结果中，然后重复步骤2。</li>
+<li>把得到的结果按照时间顺序重新排列，完成解析。</li>
+</ol>
+<a id="more"></a>
+<p>每一行歌词都可以抽象为一个包含时间和文本的结构体，解析的结果使用<code>QList</code>维护，最终代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LyricLine</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    LyricLine(<span class="keyword">int</span> time, QString text):time(time), text(text)&#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> time;</span><br><span class="line">    QString text;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">QList&lt;LyricLine*&gt; mLines;</span><br><span class="line"><span class="keyword">bool</span> mHasTimer;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">lyricTimeLessThan</span><span class="params">(<span class="keyword">const</span> LyricLine* line1, <span class="keyword">const</span> LyricLine* line2)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> line1-&gt;time &lt; line2-&gt;time;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">bool</span> LyricLoader::processContent(<span class="keyword">const</span> QString &amp;content)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!mLines.isEmpty()) &#123;</span><br><span class="line">        qDeleteAll(mLines);</span><br><span class="line">        mLines.clear();</span><br><span class="line">        mHasTimer = <span class="literal">false</span>;</span><br><span class="line">        <span class="function">emit <span class="title">lyricChanged</span><span class="params">()</span></span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">const</span> QRegExp <span class="title">rx</span><span class="params">(<span class="string">"\\[(\\d+):(\\d+(\\.\\d+)?)\\]"</span>)</span></span>; <span class="comment">//用来查找时间标签的正则表达式</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 步骤1</span></span><br><span class="line">    <span class="keyword">int</span> pos = rx.indexIn(content);</span><br><span class="line">    <span class="keyword">if</span> (pos == <span class="number">-1</span>) &#123;</span><br><span class="line">        QStringList <span class="built_in">list</span> = content.split(<span class="string">'\n'</span>, QString::SkipEmptyParts);</span><br><span class="line">        foreach (QString line, <span class="built_in">list</span>)</span><br><span class="line">            mLines.append(<span class="keyword">new</span> LyricLine(<span class="number">0</span>, line));</span><br><span class="line"></span><br><span class="line">        mHasTimer = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">int</span> lastPos;</span><br><span class="line">        QList&lt;<span class="keyword">int</span>&gt; timeLabels;</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            <span class="comment">// 步骤2</span></span><br><span class="line">            timeLabels &lt;&lt; (rx.cap(<span class="number">1</span>).toInt() * <span class="number">60</span> + rx.cap(<span class="number">2</span>).toDouble()) * <span class="number">1000</span>;</span><br><span class="line">            lastPos = pos + rx.matchedLength();</span><br><span class="line">            pos = rx.indexIn(content, lastPos);</span><br><span class="line">            <span class="keyword">if</span> (pos == <span class="number">-1</span>) &#123;</span><br><span class="line">                QString text = content.mid(lastPos).trimmed();</span><br><span class="line">                foreach (<span class="keyword">const</span> <span class="keyword">int</span>&amp; time, timeLabels)</span><br><span class="line">                    mLines.append(<span class="keyword">new</span> LyricLine(time, text));</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 步骤3</span></span><br><span class="line">            QString text = content.mid(lastPos, pos - lastPos);</span><br><span class="line">            <span class="keyword">if</span> (!text.isEmpty()) &#123;</span><br><span class="line">                foreach (<span class="keyword">const</span> <span class="keyword">int</span>&amp; time, timeLabels)</span><br><span class="line">                    mLines.append(<span class="keyword">new</span> LyricLine(time, text.trimmed()));</span><br><span class="line">                timeLabels.clear();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>);</span><br><span class="line">        <span class="comment">// 步骤4</span></span><br><span class="line">        qStableSort(mLines.begin(), mLines.end(), lyricTimeLessThan);</span><br><span class="line">        mHasTimer = <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!mLines.isEmpty()) &#123;</span><br><span class="line">        <span class="function">emit <span class="title">lyricChanged</span><span class="params">()</span></span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>播放音乐的时候，需要监听播放进度的变化，根据当前的时间点找出对应的歌词显示出来，代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> LyricLoader::getLineByPosition(<span class="keyword">const</span> <span class="keyword">int</span> &amp;millisec, <span class="keyword">const</span> <span class="keyword">int</span> &amp;startPos) <span class="keyword">const</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!mHasTimer || mLines.isEmpty())</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> result = qBound(<span class="number">0</span>, startPos, mLines.size());</span><br><span class="line">    <span class="keyword">while</span> (result &lt; mLines.size()) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mLines.at(result)-&gt;time &gt; millisec)</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        result++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result - <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里<code>startPos</code>是上一行歌词的行号，从它开始查找是为了提高效率。具体显示歌词的话就很简单了，按照具体需求使用<code>ListView</code>或者<code>QLabel</code>都可以。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Qt/" rel="tag"># Qt</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/05/17/damn-php-update/" rel="next" title="再手贱就剁手">
+                <i class="fa fa-chevron-left"></i> 再手贱就剁手
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/06/11/netease-music-qt/" rel="prev" title="网易云音乐Qt版">
+                网易云音乐Qt版 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

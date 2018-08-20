@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="环境：Desktop Qt 5.4.1 MSVC2013 32bit 需要的库：dwmapi.lib 、user32.lib 需要头文件：&amp;lt;dwmapi.h&amp;gt; 、&amp;lt;windowsx.h&amp;gt; 在要处理的QWidget 构造函数中，添加以下两行： 12setWindowFlags(Qt::Window | Qt::FramelessWindowHint);SetWidgetBor">
+<meta name="keywords" content="Qt,Windows">
+<meta property="og:type" content="article">
+<meta property="og:title" content="让Qt的无边框窗口支持拖拽、Aero Snap、窗口阴影等特性">
+<meta property="og:url" content="https://blog.yeatse.com/2015/03/01/qt-frameless-window/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="环境：Desktop Qt 5.4.1 MSVC2013 32bit 需要的库：dwmapi.lib 、user32.lib 需要头文件：&amp;lt;dwmapi.h&amp;gt; 、&amp;lt;windowsx.h&amp;gt; 在要处理的QWidget 构造函数中，添加以下两行： 12setWindowFlags(Qt::Window | Qt::FramelessWindowHint);SetWidgetBor">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:image" content="https://blog.yeatse.com/images/2015/frameless_window_preview-300x138.png">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.631Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="让Qt的无边框窗口支持拖拽、Aero Snap、窗口阴影等特性">
+<meta name="twitter:description" content="环境：Desktop Qt 5.4.1 MSVC2013 32bit 需要的库：dwmapi.lib 、user32.lib 需要头文件：&amp;lt;dwmapi.h&amp;gt; 、&amp;lt;windowsx.h&amp;gt; 在要处理的QWidget 构造函数中，添加以下两行： 12setWindowFlags(Qt::Window | Qt::FramelessWindowHint);SetWidgetBor">
+<meta name="twitter:image" content="https://blog.yeatse.com/images/2015/frameless_window_preview-300x138.png">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2015/03/01/qt-frameless-window/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>让Qt的无边框窗口支持拖拽、Aero Snap、窗口阴影等特性 | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2015/03/01/qt-frameless-window/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">让Qt的无边框窗口支持拖拽、Aero Snap、窗口阴影等特性
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2015-03-01 18:48:23" itemprop="dateCreated datePublished" datetime="2015-03-01T18:48:23+08:00">2015-03-01</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>环境：Desktop Qt 5.4.1 MSVC2013 32bit</p>
+<p>需要的库：<code>dwmapi.lib</code> 、<code>user32.lib</code></p>
+<p>需要头文件：<code>&lt;dwmapi.h&gt;</code> 、<code>&lt;windowsx.h&gt;</code></p>
+<p>在要处理的<code>QWidget</code> 构造函数中，添加以下两行：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">setWindowFlags(Qt::Window | Qt::FramelessWindowHint);</span><br><span class="line">SetWidgetBorderless(<span class="keyword">this</span>);</span><br></pre></td></tr></table></figure>
+<p><code>SetWidgetBorderless</code>的实现如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">SetWidgetBorderless</span><span class="params">(<span class="keyword">const</span> QWidget *widget)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> Q_OS_WIN</span></span><br><span class="line">    HWND hwnd = <span class="keyword">reinterpret_cast</span>&lt;HWND&gt;(widget-&gt;winId());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> LONG style = ( WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_CLIPCHILDREN );</span><br><span class="line">    SetWindowLongPtr(hwnd, GWL_STYLE, style);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> MARGINS shadow = &#123;<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>&#125;;</span><br><span class="line">    DwmExtendFrameIntoClientArea(hwnd, &amp;shadow);</span><br><span class="line"></span><br><span class="line">    SetWindowPos(hwnd, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个函数的作用是给无边框窗口加上阴影、Aero Snap以及其他动画特效。</p>
+<a id="more"></a>
+<p>这时窗口还无法手动更改大小，需要更改的话，需要自己实现一个<code>QAbstractNativeEventFilter</code> 类，内容如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">NativeEventFilter</span> :</span> <span class="keyword">public</span> QAbstractNativeEventFilter</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">nativeEventFilter</span><span class="params">(<span class="keyword">const</span> QByteArray &amp;eventType, <span class="keyword">void</span> *message, <span class="keyword">long</span> *result)</span> Q_DECL_OVERRIDE</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> Q_OS_WIN</span></span><br><span class="line">        <span class="keyword">if</span> (eventType != <span class="string">"windows_generic_MSG"</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">        MSG* msg = <span class="keyword">static_cast</span>&lt;MSG*&gt;(message);</span><br><span class="line">        QWidget* widget = QWidget::find(<span class="keyword">reinterpret_cast</span>&lt;WId&gt;(msg-&gt;hwnd));</span><br><span class="line">        <span class="keyword">if</span> (!widget)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">switch</span> (msg-&gt;message) &#123;</span><br><span class="line">        <span class="keyword">case</span> WM_NCCALCSIZE: &#123;</span><br><span class="line">            *result = <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> WM_NCHITTEST: &#123;</span><br><span class="line">            <span class="keyword">const</span> LONG borderWidth = <span class="number">9</span>;</span><br><span class="line">            RECT winrect;</span><br><span class="line">            GetWindowRect(msg-&gt;hwnd, &amp;winrect);</span><br><span class="line">            <span class="keyword">long</span> x = GET_X_LPARAM(msg-&gt;lParam);</span><br><span class="line">            <span class="keyword">long</span> y = GET_Y_LPARAM(msg-&gt;lParam);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// bottom left</span></span><br><span class="line">            <span class="keyword">if</span> (x &gt;= winrect.left &amp;&amp; x &lt; winrect.left + borderWidth &amp;&amp;</span><br><span class="line">                    y &lt; winrect.bottom &amp;&amp; y &gt;= winrect.bottom - borderWidth)</span><br><span class="line">            &#123;</span><br><span class="line">                *result = HTBOTTOMLEFT;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// bottom right</span></span><br><span class="line">            <span class="keyword">if</span> (x &lt; winrect.right &amp;&amp; x &gt;= winrect.right - borderWidth &amp;&amp;</span><br><span class="line">                    y &lt; winrect.bottom &amp;&amp; y &gt;= winrect.bottom - borderWidth)</span><br><span class="line">            &#123;</span><br><span class="line">                *result = HTBOTTOMRIGHT;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// top left</span></span><br><span class="line">            <span class="keyword">if</span> (x &gt;= winrect.left &amp;&amp; x &lt; winrect.left + borderWidth &amp;&amp;</span><br><span class="line">                    y &gt;= winrect.top &amp;&amp; y &lt; winrect.top + borderWidth)</span><br><span class="line">            &#123;</span><br><span class="line">                *result = HTTOPLEFT;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// top right</span></span><br><span class="line">            <span class="keyword">if</span> (x &lt; winrect.right &amp;&amp; x &gt;= winrect.right - borderWidth &amp;&amp;</span><br><span class="line">                    y &gt;= winrect.top &amp;&amp; y &lt; winrect.top + borderWidth)</span><br><span class="line">            &#123;</span><br><span class="line">                *result = HTTOPRIGHT;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// left</span></span><br><span class="line">            <span class="keyword">if</span> (x &gt;= winrect.left &amp;&amp; x &lt; winrect.left + borderWidth)</span><br><span class="line">            &#123;</span><br><span class="line">                *result = HTLEFT;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// right</span></span><br><span class="line">            <span class="keyword">if</span> (x &lt; winrect.right &amp;&amp; x &gt;= winrect.right - borderWidth)</span><br><span class="line">            &#123;</span><br><span class="line">                *result = HTRIGHT;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// bottom</span></span><br><span class="line">            <span class="keyword">if</span> (y &lt; winrect.bottom &amp;&amp; y &gt;= winrect.bottom - borderWidth)</span><br><span class="line">            &#123;</span><br><span class="line">                *result = HTBOTTOM;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// top</span></span><br><span class="line">            <span class="keyword">if</span> (y &gt;= winrect.top &amp;&amp; y &lt; winrect.top + borderWidth)</span><br><span class="line">            &#123;</span><br><span class="line">                *result = HTTOP;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>然后在窗口创建之前，使用<code>QApplication::installNativeEventFilter</code> 方法把监听器注册给主程序。</p>
+<p>要手动移动窗口位置的话，还要重截<code>QWidget::mousePressEvent</code> 方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> MyWidget::mousePressEvent(QMouseEvent *ev)</span><br><span class="line">&#123;</span><br><span class="line">    QWidget::mousePressEvent(ev);</span><br><span class="line">    <span class="keyword">if</span> (!ev-&gt;isAccepted()) &#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> Q_OS_WIN</span></span><br><span class="line">        ReleaseCapture();</span><br><span class="line">        SendMessage(<span class="keyword">reinterpret_cast</span>&lt;HWND&gt;(winId()), WM_SYSCOMMAND, SC_MOVE + HTCAPTION, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在实际操作时，有时还需要添加最大化和关闭按扭，这时正常调用<code>QWidget::showMaximized()</code>和<code>QWidget::close()</code> 等Qt自带方法即可。</p>
+<p>最终实现效果大概是这样：</p>
+<p><a href="/images/2015/frameless_window_preview.png"><img src="/images/2015/frameless_window_preview-300x138.png" alt="frameless_window_preview"></a></p>
+<p>缩放动画、阴影什么的和Windows本地窗口一样。</p>
+<p>参考链接：<a href="https://github.com/deimos1877/BorderlessWindow" target="_blank" rel="noopener">https://github.com/deimos1877/BorderlessWindow</a></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Qt/" rel="tag"># Qt</a>
+          
+            <a href="/tags/Windows/" rel="tag"># Windows</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/02/28/use-quazip-in-qt-projects/" rel="next" title="在Qt工程中使用quazip库">
+                <i class="fa fa-chevron-left"></i> 在Qt工程中使用quazip库
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/03/03/qt-singleton-implementation/" rel="prev" title="Qt中单例模式的实现">
+                Qt中单例模式的实现 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

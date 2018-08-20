@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="目前在做的一个项目迁移到 React Native 已经一年多了，也意味着踩了一年的坑，感觉光填上各种奇怪的坑都会让自己的水平提升不少。最近解决了一个占比接近 10% 的崩溃，在这里记录一下。">
+<meta name="keywords" content="iOS,React Native">
+<meta property="og:type" content="article">
+<meta property="og:title" content="React Native 一处诡异 crash: RCTFont SIGABRT">
+<meta property="og:url" content="https://blog.yeatse.com/2017/09/29/react-native-crash-rctfont-sigabrt/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="目前在做的一个项目迁移到 React Native 已经一年多了，也意味着踩了一年的坑，感觉光填上各种奇怪的坑都会让自己的水平提升不少。最近解决了一个占比接近 10% 的崩溃，在这里记录一下。">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:image" content="https://blog.yeatse.com/images/2017/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-07-31%20%E4%B8%8B%E5%8D%889.38.38.png">
+<meta property="og:image" content="https://blog.yeatse.com/images/2017/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-08-01%20%E4%B8%8B%E5%8D%883.03.38.png">
+<meta property="og:image" content="https://blog.yeatse.com/images/2017/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-08-09%20%E4%B8%8A%E5%8D%8811.45.36.png">
+<meta property="og:image" content="https://blog.yeatse.com/images/2017/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-08-23%20%E4%B8%8B%E5%8D%8812.25.22.png">
+<meta property="og:image" content="https://blog.yeatse.com/images/2017/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-08-23%20%E4%B8%8B%E5%8D%881.05.44.png">
+<meta property="og:image" content="https://blog.yeatse.com/images/2017/DX-20170823@2x.png">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.632Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="React Native 一处诡异 crash: RCTFont SIGABRT">
+<meta name="twitter:description" content="目前在做的一个项目迁移到 React Native 已经一年多了，也意味着踩了一年的坑，感觉光填上各种奇怪的坑都会让自己的水平提升不少。最近解决了一个占比接近 10% 的崩溃，在这里记录一下。">
+<meta name="twitter:image" content="https://blog.yeatse.com/images/2017/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-07-31%20%E4%B8%8B%E5%8D%889.38.38.png">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2017/09/29/react-native-crash-rctfont-sigabrt/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>React Native 一处诡异 crash: RCTFont SIGABRT | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2017/09/29/react-native-crash-rctfont-sigabrt/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">React Native 一处诡异 crash: RCTFont SIGABRT
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2017-09-29 01:10:29" itemprop="dateCreated datePublished" datetime="2017-09-29T01:10:29+08:00">2017-09-29</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>目前在做的一个项目迁移到 React Native 已经一年多了，也意味着踩了一年的坑，感觉光填上各种奇怪的坑都会让自己的水平提升不少。最近解决了一个占比接近 10% 的崩溃，在这里记录一下。</p>
+<a id="more"></a>
+<p><img src="/images/2017/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-07-31%20%E4%B8%8B%E5%8D%889.38.38.png" alt="屏幕快照"></p>
+<p>崩溃的方法是<br><code>+[RCTFont updateFont:withFamily:size:weight:style:variant:scaleMultiplier:]</code>，在这个位置会抛出 <code>mutex lock failed: Invalid argument</code> 的异常。</p>
+<p>查了下崩溃栈，大概长这样：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">Thread 24 Crashed:</span><br><span class="line">0   libsystem_kernel.dylib              __pthread_kill + 8</span><br><span class="line">1   libsystem_c.dylib                   abort + 140</span><br><span class="line">2   libc++abi.dylib                     __cxa_bad_cast + 0</span><br><span class="line">3   libc++abi.dylib                     default_terminate_handler() + 280</span><br><span class="line">4   libobjc.A.dylib                     _objc_terminate() + 140</span><br><span class="line">5   libc++abi.dylib                     std::__terminate(void (*)()) + 16</span><br><span class="line">6   libc++abi.dylib                     __cxxabiv1::exception_cleanup_func(_Unwind_Reason_Code, _Unwind_Exception*) + 0</span><br><span class="line">7   libc++.1.dylib                      std::__1::__throw_system_error(int, char const*) + 88</span><br><span class="line">8   bee                                 +[RCTFont updateFont:withFamily:size:weight:style:variant:scaleMultiplier:] + 780</span><br><span class="line">9   bee                                 -[RCTShadowText _attributedStringWithFontFamily:fontSize:fontWeight:fontStyle:letterSpacing:useBackgroundColor:foregroundColor:backgroundColor:opacity:] + 580</span><br><span class="line">10  bee                                 -[RCTShadowText attributedString] + 192</span><br><span class="line">11  bee                                 -[RCTShadowText recomputeText] + 28</span><br><span class="line">12  bee                                 -[RCTTextManager uiBlockToAmendWithShadowViewRegistry:] + 612</span><br><span class="line">13  bee                                 -[RCTComponentData uiBlockToAmendWithShadowViewRegistry:] + 96</span><br><span class="line">14  bee                                 -[RCTUIManager _layoutAndMount] + 220</span><br><span class="line">15  bee                                 __36-[RCTBatchedBridge batchDidComplete]_block_invoke + 52</span><br><span class="line">16  libdispatch.dylib                   _dispatch_call_block_and_release + 24</span><br><span class="line">17  libdispatch.dylib                   _dispatch_client_callout + 16</span><br><span class="line">18  libdispatch.dylib                   _dispatch_queue_serial_drain + 928</span><br><span class="line">19  libdispatch.dylib                   _dispatch_queue_invoke + 884</span><br><span class="line">20  libdispatch.dylib                   _dispatch_root_queue_drain + 540</span><br><span class="line">21  libdispatch.dylib                   _dispatch_worker_thread3 + 124</span><br><span class="line">22  libsystem_pthread.dylib             _pthread_wqthread + 1096</span><br><span class="line">23  libsystem_pthread.dylib             start_wqthread + 4</span><br></pre></td></tr></table></figure>
+<p>从崩溃栈上可以看出来是 RN 库 RCTFont 模块出的问题，除此之外再也找不到其他信息，放 google 搜了一圈，只能找到别人提的同样的问题 – <a href="https://github.com/facebook/react-native/issues/13588" target="_blank" rel="noopener">RCTFont SIGABRT crash</a>、<a href="https://github.com/facebook/react-native/issues/14526" target="_blank" rel="noopener">App crashes for “mutex lock failed: Invalid argument”</a>，却没人提出解决方法，看来只能自己解了。</p>
+<p>首先把可执行文件拉到 <a href="https://www.hopperapp.com" target="_blank" rel="noopener">Hopper</a> 里，定位到崩溃处，看一下对应的汇编指令：</p>
+<p><img src="/images/2017/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-08-01%20%E4%B8%8B%E5%8D%883.03.38.png" alt="屏幕快照 2017-08-01 下午3.03.38"></p>
+<p>可以得知应用在 RCTFont 内部使用 std::mutex 加锁的时候抛出了异常，对应于 <a href="https://github.com/facebook/react-native/blob/6ce42441ec98bb8543e8eff8849ce50e076ce520/React/Views/RCTFont.mm#L103" target="_blank" rel="noopener">RCTFont.mm 第 103 行</a>：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    std::lock_guard&lt;std::mutex&gt; lock(fontCacheMutex); <span class="comment">///&lt; 在这里挂掉了</span></span><br><span class="line">    <span class="keyword">if</span> (!fontCache) &#123;</span><br><span class="line">      fontCache = [<span class="built_in">NSCache</span> new];</span><br><span class="line">    &#125;</span><br><span class="line">    font = [fontCache objectForKey:cacheKey];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对比收集到的各种崩溃样本，可以总结出以下几处共同点：</p>
+<ul>
+<li>主线程都有 <code>handleApplicationDeactivationWithScene</code> → <code>+[_UIAlertManager hideAlertsForTermination]</code> → <code>exit</code> 的调用；</li>
+<li>crash 都发生在后台；</li>
+<li>都在 <code>mutex::lock</code> 的时候抛出了异常。</li>
+</ul>
+<p>给 <code>handleApplicationDeactivationWithScene</code> 等方法下个断点，发现只有在用户手动 kill 掉 app 时这些方法才会被调用，猜测这个时候系统可能正在做一些清理工作，这时候如果有其他线程调用了 <code>mutex::lock</code> 可能就会导致异常。</p>
+<p>假设上面的猜测为真，那么解决问题的关键是让应用进程结束时不调用 <code>mutex::lock</code> 方法。查看 React Native 源码，crash 处的代码只被一个方法调用，即上面提到的 <code>+[RCTFont updateFont:withFamily:size:weight:style:variant:scaleMultiplier:]</code></p>
+<p><img src="/images/2017/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-08-09%20%E4%B8%8A%E5%8D%8811.45.36.png" alt="屏幕快照 2017-08-09 上午11.45.36"></p>
+<p>这个方法的调用者有多个，但最终都走到了 React Native 模块的各个属性的设置方法里，在 React Native 线程里，由 <code>RCTBatchedBridge</code> → <code>RCTJSCExecutor</code> 驱动</p>
+<p><img src="/images/2017/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-08-23%20%E4%B8%8B%E5%8D%8812.25.22.png" alt="屏幕快照 2017-08-23 下午12.25.22"></p>
+<p>注意到 js 每次调用时都会检查 <code>_valid</code> 属性，所以只需要在进程结束时把 <code>_valid</code> 置为 false，crash 处的代码就不会被执行。<code>RCTBatchedBridge</code> 和它的包装类 <code>RCTBridge</code> 刚好暴露出了 <code>invalidate</code> 方法，可以把 <code>_valid</code> 置为 false：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// -[RCTBridge invalidate]</span></span><br><span class="line">- (<span class="keyword">void</span>)invalidate</span><br><span class="line">&#123;</span><br><span class="line">  RCTBridge *batchedBridge = <span class="keyword">self</span>.batchedBridge;</span><br><span class="line">  <span class="keyword">self</span>.batchedBridge = <span class="literal">nil</span>;</span><br><span class="line"> </span><br><span class="line">  <span class="keyword">if</span> (batchedBridge) &#123;</span><br><span class="line">    RCTExecuteOnMainQueue(^&#123;</span><br><span class="line">      [batchedBridge invalidate];</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// -[RCTBatchedBridge invalidate]</span></span><br><span class="line">- (<span class="keyword">void</span>)invalidate</span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span> (!_valid) &#123;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"> </span><br><span class="line">  _loading = <span class="literal">NO</span>;</span><br><span class="line">  _valid = <span class="literal">NO</span>;</span><br><span class="line"> </span><br><span class="line">  <span class="comment">// Invalidate modules</span></span><br><span class="line">  <span class="keyword">for</span> (RCTModuleData *moduleData <span class="keyword">in</span> _moduleDataByID) &#123;</span><br><span class="line">    <span class="keyword">id</span>&lt;RCTBridgeModule&gt; instance = moduleData.instance;</span><br><span class="line">    [instance invalidate];</span><br><span class="line">    [moduleData invalidate];</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>用户杀掉 app 时，系统会调用 App Delegate 的 <code>applicationWillTerminate</code> 方法，所以我们需要在这里调用一下 <code>-[RCTBridge invalidate]</code>，使 <code>RCTBridge</code> 失效，这样就不会再触发导致 crash 的代码了。</p>
+<p>但问题是，<code>-[RCTBridge invalidate]</code> 方法是异步的，<code>applicationWillTerminate</code> 一返回马上就进入 <code>exit</code> 函数，这时候程序还来不及干掉 <code>RCTBridge</code>，crash 处的代码还是会执行。所以这里还需要借用 runloop 让 <code>applicationWillTerminate</code> 卡一会儿，直到 <code>RCTBridge</code> 完全停止：</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">- (<span class="keyword">void</span>)applicationWillTerminate:(<span class="built_in">UIApplication</span> *)application &#123;</span><br><span class="line">    RCTBridge *batchedBridge = [<span class="keyword">self</span>.bridge valueForKey:<span class="string">@"batchedBridge"</span>];</span><br><span class="line">    [<span class="keyword">self</span>.bridge invalidate];</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">NSRunLoop</span> *runLoop = [<span class="built_in">NSRunLoop</span> currentRunLoop];</span><br><span class="line">    <span class="built_in">NSArray</span>&lt;<span class="built_in">NSRunLoopMode</span>&gt; *allModes = <span class="built_in">CFBridgingRelease</span>(<span class="built_in">CFRunLoopCopyAllModes</span>(runLoop.getCFRunLoop));</span><br><span class="line">    <span class="keyword">while</span> (batchedBridge.moduleClasses) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">NSRunLoopMode</span> mode <span class="keyword">in</span> allModes) &#123;</span><br><span class="line">            [runLoop runMode:mode beforeDate:[<span class="built_in">NSDate</span> dateWithTimeIntervalSinceNow:<span class="number">0.1</span>]];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里用到了几处 trick：</p>
+<ul>
+<li>在这里阻塞 <code>applicationWillTerminate</code> 要用 runloop，而不是简单的 sleep，原因是 invalidate 方法内部向主线程分发了一些事要做（见 <a href="https://github.com/facebook/react-native/blob/6ce42441ec98bb8543e8eff8849ce50e076ce520/React/Base/RCTBatchedBridge.mm#L714-L735" target="_blank" rel="noopener">RCTBatchedBridge.mm 源码</a>），需要主线程有处理事件的能力；</li>
+<li>invalidate 方法最后一步是置空 <code>RCTBatchedBridge</code> 的 <code>moduleClasses</code> 属性，所以可以通过它是否为空来确定 RCTBridge 完全停止的时机。 batchedBridge 是私有属性所以需要 kvc 来拿到。</li>
+</ul>
+<p>加入工程发版之后，这个 crash 就消失了，撒花。</p>
+<p><img src="/images/2017/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202017-08-23%20%E4%B8%8B%E5%8D%881.05.44.png" alt="屏幕快照 2017-08-23 下午1.05.44"></p>
+<hr>
+<h2 id="One-more-thing"><a href="#One-more-thing" class="headerlink" title="One more thing"></a>One more thing</h2><p>为什么主线程调用了 <code>exit</code> 之后，其他线程调用 <code>mutex::lock</code> 方法时会抛异常？</p>
+<figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="built_in">NSCache</span> *fontCache;</span><br><span class="line"><span class="keyword">static</span> std::mutex fontCacheMutex;</span><br><span class="line"> </span><br><span class="line"><span class="built_in">NSString</span> *cacheKey = [<span class="built_in">NSString</span> stringWithFormat:<span class="string">@"%.1f/%.2f"</span>, size, weight];</span><br><span class="line"><span class="built_in">UIFont</span> *font;</span><br><span class="line">&#123;</span><br><span class="line">  std::lock_guard&lt;std::mutex&gt; lock(fontCacheMutex);</span><br><span class="line">  <span class="keyword">if</span> (!fontCache) &#123;</span><br><span class="line">    fontCache = [<span class="built_in">NSCache</span> new];</span><br><span class="line">  &#125;</span><br><span class="line">  font = [fontCache objectForKey:cacheKey];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>回过来看崩溃位置代码，第 2 行声明了一个局部变量 fontCacheMutex，通过汇编指令可以看出，它在创建的时候通过 <code>__cxa_atexit</code> 方法注册了一个销毁函数：</p>
+<p><img src="/images/2017/DX-20170823@2x.png" alt="DX-20170823@2x"></p>
+<p>主线程调用 <code>exit</code> 方法时，会通过 <code>__cxa_finalize</code> 逐个调用之前注册的销毁函数（参考 <a href="https://opensource.apple.com/source/Libc/Libc-1158.50.2/stdlib/FreeBSD/atexit.c.auto.html" target="_blank" rel="noopener">atexit.c 源码</a>），这个静态变量 fontCacheMutex 随之销毁，之后再调用这个销毁过的 mutex 对象的方法自然会 crash 了。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+            <a href="/tags/React-Native/" rel="tag"># React Native</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/10/26/support-nsurlprotocol-in-wkwebview/" rel="next" title="让 WKWebView 支持 NSURLProtocol">
+                <i class="fa fa-chevron-left"></i> 让 WKWebView 支持 NSURLProtocol
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#One-more-thing"><span class="nav-number">1.</span> <span class="nav-text">One more thing</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

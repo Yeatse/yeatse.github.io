@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="好久没发东西了，人太懒。。。 标题是公司项目里要实现的功能，其实没啥难度。但是从iOS9.0开始ALAssetsLibrary被废弃了，由PHPhotoLibrary替代了，所以网上的方法不能用了。自己查文档查stackoverflow，重新实现了功能，然后简单封装了一下，留个记录。iOS7以上系统可用。">
+<meta name="keywords" content="iOS,Objective-C">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在iOS上选取图库图片并保存图片到图库">
+<meta property="og:url" content="https://blog.yeatse.com/2015/09/27/ios-gallery-access/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="好久没发东西了，人太懒。。。 标题是公司项目里要实现的功能，其实没啥难度。但是从iOS9.0开始ALAssetsLibrary被废弃了，由PHPhotoLibrary替代了，所以网上的方法不能用了。自己查文档查stackoverflow，重新实现了功能，然后简单封装了一下，留个记录。iOS7以上系统可用。">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.630Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="在iOS上选取图库图片并保存图片到图库">
+<meta name="twitter:description" content="好久没发东西了，人太懒。。。 标题是公司项目里要实现的功能，其实没啥难度。但是从iOS9.0开始ALAssetsLibrary被废弃了，由PHPhotoLibrary替代了，所以网上的方法不能用了。自己查文档查stackoverflow，重新实现了功能，然后简单封装了一下，留个记录。iOS7以上系统可用。">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2015/09/27/ios-gallery-access/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>在iOS上选取图库图片并保存图片到图库 | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2015/09/27/ios-gallery-access/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">在iOS上选取图库图片并保存图片到图库
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2015-09-27 00:43:45" itemprop="dateCreated datePublished" datetime="2015-09-27T00:43:45+08:00">2015-09-27</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>好久没发东西了，人太懒。。。</p>
+<p>标题是公司项目里要实现的功能，其实没啥难度。但是从iOS9.0开始<code>ALAssetsLibrary</code>被废弃了，由<code>PHPhotoLibrary</code>替代了，所以网上的方法不能用了。自己查文档查stackoverflow，重新实现了功能，然后简单封装了一下，留个记录。iOS7以上系统可用。</p>
+<a id="more"></a>
+<p>GalleryAccess.h：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//  GalleryAccess.h</span></span><br><span class="line"><span class="comment">//  bukaios</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//  Created by yeatse on 15/9/23.</span></span><br><span class="line"><span class="comment">//  Copyright © 2015年 bukaios. All rights reserved.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#import <span class="meta-string">&lt;Foundation/Foundation.h&gt;</span></span></span><br><span class="line"><span class="meta">#import <span class="meta-string">&lt;UIKit/UIKit.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">GalleryAccess</span> : <span class="title">NSObject</span></span></span><br><span class="line"></span><br><span class="line">+ (<span class="keyword">void</span>)pickImageFromController:(<span class="built_in">UIViewController</span>*)controller</span><br><span class="line">                        handler:(<span class="keyword">void</span>(^)(<span class="built_in">UIImage</span>* result))handler;</span><br><span class="line"></span><br><span class="line">+ (<span class="keyword">void</span>)saveImage:(<span class="built_in">UIImage</span>*)image</span><br><span class="line">          toAlbum:(<span class="built_in">NSString</span>*)albumName</span><br><span class="line">          handler:(<span class="keyword">void</span>(^)(<span class="built_in">NSError</span>* error))handler;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<p>GalleryAccess.m</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//  GalleryAccess.m</span></span><br><span class="line"><span class="comment">//  bukaios</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//  Created by yeatse on 15/9/23.</span></span><br><span class="line"><span class="comment">//  Copyright © 2015年 bukaios. All rights reserved.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#import <span class="meta-string">"GalleryAccess.h"</span></span></span><br><span class="line"><span class="meta">#import <span class="meta-string">&lt;MobileCoreServices/MobileCoreServices.h&gt;</span></span></span><br><span class="line"><span class="meta">#import <span class="meta-string">&lt;AssetsLibrary/AssetsLibrary.h&gt;</span></span></span><br><span class="line"><span class="meta">#import <span class="meta-string">&lt;Photos/Photos.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#define IMPLEMENT_SINGLETON(funcname, clsname) \</span></span><br><span class="line">+ (<span class="keyword">id</span>)funcname \</span><br><span class="line">&#123; \</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">id</span> i = <span class="literal">nil</span>; \</span><br><span class="line"><span class="keyword">static</span> <span class="built_in">dispatch_once_t</span> once; \</span><br><span class="line"><span class="built_in">dispatch_once</span>(&amp;once, ^&#123; \</span><br><span class="line">i = [[<span class="keyword">self</span> alloc] init]; \</span><br><span class="line">&#125;); \</span><br><span class="line"><span class="keyword">return</span> i; \</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@interface</span> <span class="title">GalleryAccess</span>()&lt;<span class="title">UINavigationControllerDelegate</span>, <span class="title">UIImagePickerControllerDelegate</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">@property</span> (<span class="keyword">strong</span>) <span class="keyword">void</span>(^pickImageHandler)(<span class="built_in">UIImage</span>* result);</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">@implementation</span> <span class="title">GalleryAccess</span></span></span><br><span class="line"></span><br><span class="line">IMPLEMENT_SINGLETON(instance, GalleryAccess);</span><br><span class="line"></span><br><span class="line">+ (<span class="keyword">void</span>)pickImageFromController:(<span class="built_in">UIViewController</span> *)controller handler:(<span class="keyword">void</span> (^)(<span class="built_in">UIImage</span> *))handler</span><br><span class="line">&#123;</span><br><span class="line">    GalleryAccess* mgr = [GalleryAccess instance];</span><br><span class="line">    mgr.pickImageHandler = handler;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">UIImagePickerController</span>* picker = [[<span class="built_in">UIImagePickerController</span> alloc] init];</span><br><span class="line">    picker.delegate = mgr;</span><br><span class="line">    picker.allowsEditing = <span class="literal">YES</span>;</span><br><span class="line">    picker.sourceType = <span class="built_in">UIImagePickerControllerSourceTypePhotoLibrary</span>;</span><br><span class="line"></span><br><span class="line">    [controller presentViewController:picker animated:<span class="literal">YES</span> completion:<span class="literal">NULL</span>];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">+ (<span class="keyword">void</span>)saveImage:(<span class="built_in">UIImage</span> *)image toAlbum:(<span class="built_in">NSString</span> *)albumName handler:(<span class="keyword">void</span> (^)(<span class="built_in">NSError</span> *))handler</span><br><span class="line">&#123;</span><br><span class="line">    GalleryAccess* mgr = [GalleryAccess instance];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ([[[<span class="built_in">UIDevice</span> currentDevice] systemVersion] floatValue] &gt;= <span class="number">8</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        __block PHAssetCollection* collection;</span><br><span class="line">        __block PHObjectPlaceholder* placeholder;</span><br><span class="line"></span><br><span class="line">        PHFetchOptions* fetchOptions = [[PHFetchOptions alloc] init];</span><br><span class="line">        fetchOptions.predicate = [<span class="built_in">NSPredicate</span> predicateWithFormat:<span class="string">@"localizedTitle = %@"</span>, albumName];</span><br><span class="line"></span><br><span class="line">        PHFetchResult* fetchResult = [PHAssetCollection fetchAssetCollectionsWithType:PHAssetCollectionTypeAlbum subtype:PHAssetCollectionSubtypeAny options:fetchOptions];</span><br><span class="line">        collection = fetchResult.firstObject;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!collection)</span><br><span class="line">        &#123;</span><br><span class="line">            [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^&#123;</span><br><span class="line">                PHAssetCollectionChangeRequest* createAlbum = [PHAssetCollectionChangeRequest creationRequestForAssetCollectionWithTitle:albumName];</span><br><span class="line">                placeholder = [createAlbum placeholderForCreatedAssetCollection];</span><br><span class="line">            &#125; completionHandler:^(<span class="built_in">BOOL</span> success, <span class="built_in">NSError</span> * _Nullable error) &#123;</span><br><span class="line">                <span class="keyword">if</span> (success)</span><br><span class="line">                &#123;</span><br><span class="line">                    PHFetchResult* collectionFetchResult = [PHAssetCollection fetchAssetCollectionsWithLocalIdentifiers:@[placeholder.localIdentifier] options:<span class="literal">nil</span>];</span><br><span class="line">                    collection = collectionFetchResult.firstObject;</span><br><span class="line">                    [mgr addNewAssetWithImage:image toAlbum:collection handler:handler];</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">else</span></span><br><span class="line">                &#123;</span><br><span class="line">                    handler(error);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">        &#123;</span><br><span class="line">            [mgr addNewAssetWithImage:image toAlbum:collection handler:handler];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        ALAssetsLibrary* library = [[ALAssetsLibrary alloc] init];</span><br><span class="line">        [library writeImageToSavedPhotosAlbum:image.CGImage</span><br><span class="line">                                  orientation:(ALAssetOrientation)image.imageOrientation</span><br><span class="line">                              completionBlock:^(<span class="built_in">NSURL</span> *assetURL, <span class="built_in">NSError</span> *error) &#123;</span><br><span class="line">                                  <span class="keyword">if</span> (error)</span><br><span class="line">                                  &#123;</span><br><span class="line">                                      handler(error);</span><br><span class="line">                                  &#125;</span><br><span class="line">                                  <span class="keyword">else</span></span><br><span class="line">                                  &#123;</span><br><span class="line">                                      [mgr addAssetURL:assetURL toAlbum:albumName</span><br><span class="line">                                               library:library handler:handler];</span><br><span class="line">                                  &#125;</span><br><span class="line">                              &#125;];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)addNewAssetWithImage:(<span class="built_in">UIImage</span>*)image toAlbum:(PHAssetCollection*)album handler:(<span class="keyword">void</span>(^)(<span class="built_in">NSError</span>*))handler</span><br><span class="line">&#123;</span><br><span class="line">    [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^&#123;</span><br><span class="line">        PHAssetChangeRequest* createAssetRequest = [PHAssetChangeRequest creationRequestForAssetFromImage:image];</span><br><span class="line"></span><br><span class="line">        PHAssetCollectionChangeRequest* albumChangeRequest = [PHAssetCollectionChangeRequest changeRequestForAssetCollection:album];</span><br><span class="line"></span><br><span class="line">        PHObjectPlaceholder* assetPlaceholder = [createAssetRequest placeholderForCreatedAsset];</span><br><span class="line">        [albumChangeRequest addAssets:@[assetPlaceholder]];</span><br><span class="line">    &#125; completionHandler:^(<span class="built_in">BOOL</span> success, <span class="built_in">NSError</span> * _Nullable error) &#123;</span><br><span class="line">        handler(error);</span><br><span class="line">    &#125;];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)addAssetURL:(<span class="built_in">NSURL</span>*)assetURL toAlbum:(<span class="built_in">NSString</span>*)albumName library:(ALAssetsLibrary*)library handler:(<span class="keyword">void</span> (^)(<span class="built_in">NSError</span> *))handler</span><br><span class="line">&#123;</span><br><span class="line">    __block <span class="built_in">BOOL</span> albumFound = <span class="literal">NO</span>;</span><br><span class="line">    [library enumerateGroupsWithTypes:ALAssetsGroupAlbum</span><br><span class="line">                           usingBlock:^(ALAssetsGroup *group, <span class="built_in">BOOL</span> *stop) &#123;</span><br><span class="line">                               <span class="keyword">if</span> ([albumName compare:[group valueForProperty:ALAssetsGroupPropertyName]</span><br><span class="line">                                              options:<span class="built_in">NSCaseInsensitiveSearch</span>] == <span class="built_in">NSOrderedSame</span>)</span><br><span class="line">                               &#123;</span><br><span class="line">                                   albumFound = <span class="literal">YES</span>;</span><br><span class="line"></span><br><span class="line">                                   [library assetForURL:assetURL</span><br><span class="line">                                            resultBlock:^(ALAsset *asset) &#123;</span><br><span class="line">                                                [group addAsset:asset];</span><br><span class="line">                                                handler(<span class="literal">nil</span>);</span><br><span class="line">                                            &#125; failureBlock:handler];</span><br><span class="line"></span><br><span class="line">                                   *stop = <span class="literal">YES</span>;</span><br><span class="line">                               &#125;</span><br><span class="line"></span><br><span class="line">                               <span class="keyword">if</span> (!group &amp;&amp; !albumFound)</span><br><span class="line">                               &#123;</span><br><span class="line">                                   __<span class="keyword">weak</span> ALAssetsLibrary* weakLib = library;</span><br><span class="line"></span><br><span class="line">                                   [library addAssetsGroupAlbumWithName:albumName</span><br><span class="line">                                                            resultBlock:^(ALAssetsGroup *group) &#123;</span><br><span class="line">                                                                [weakLib assetForURL:assetURL</span><br><span class="line">                                                                         resultBlock:^(ALAsset *asset) &#123;</span><br><span class="line">                                                                             [group addAsset:asset];</span><br><span class="line">                                                                             handler(<span class="literal">nil</span>);</span><br><span class="line">                                                                         &#125;</span><br><span class="line">                                                                        failureBlock:handler];</span><br><span class="line">                                                            &#125;</span><br><span class="line">                                                           failureBlock:handler];</span><br><span class="line"></span><br><span class="line">                                   *stop = <span class="literal">YES</span>;</span><br><span class="line">                               &#125;</span><br><span class="line">                           &#125;</span><br><span class="line">                         failureBlock:handler];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#pragma mark UIImagePickerControllerDelegate</span></span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)imagePickerController:(<span class="built_in">UIImagePickerController</span> *)picker didFinishPickingMediaWithInfo:(<span class="built_in">NSDictionary</span>&lt;<span class="built_in">NSString</span> *,<span class="keyword">id</span>&gt; *)info</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">UIImage</span>* result = <span class="literal">nil</span>;</span><br><span class="line">    <span class="built_in">NSString</span>* type = [info objectForKey:<span class="built_in">UIImagePickerControllerMediaType</span>];</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">CFStringCompare</span>((__bridge_retained <span class="built_in">CFStringRef</span>) type, kUTTypeImage, <span class="number">0</span>) == kCFCompareEqualTo)</span><br><span class="line">    &#123;</span><br><span class="line">        result = (<span class="built_in">UIImage</span>*)[info objectForKey:<span class="built_in">UIImagePickerControllerEditedImage</span>];</span><br><span class="line">        <span class="keyword">if</span> (!result)</span><br><span class="line">            result = (<span class="built_in">UIImage</span>*)[info objectForKey:<span class="built_in">UIImagePickerControllerOriginalImage</span>];</span><br><span class="line">    &#125;</span><br><span class="line">    [picker dismissViewControllerAnimated:<span class="literal">YES</span> completion:<span class="literal">NULL</span>];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.pickImageHandler)</span><br><span class="line">        <span class="keyword">self</span>.pickImageHandler(result);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">self</span>.pickImageHandler = <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">- (<span class="keyword">void</span>)imagePickerControllerDidCancel:(<span class="built_in">UIImagePickerController</span> *)picker</span><br><span class="line">&#123;</span><br><span class="line">    [picker dismissViewControllerAnimated:<span class="literal">YES</span> completion:<span class="literal">NULL</span>];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">self</span>.pickImageHandler)</span><br><span class="line">        <span class="keyword">self</span>.pickImageHandler(<span class="literal">nil</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">self</span>.pickImageHandler = <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">@end</span></span><br></pre></td></tr></table></figure>
+<p>用法很简单，头文件的声明很清楚了~懒得写注释，反正自己能看懂。。。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+            <a href="/tags/Objective-C/" rel="tag"># Objective-C</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/06/11/netease-music-qt/" rel="next" title="网易云音乐Qt版">
+                <i class="fa fa-chevron-left"></i> 网易云音乐Qt版
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/10/18/wp-author-theme-modification/" rel="prev" title="WP Author主题的一些手动调整">
+                WP Author主题的一些手动调整 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

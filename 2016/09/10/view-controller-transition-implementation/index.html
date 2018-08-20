@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-cn">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '6.4.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="众所周知，iOS 的 View Controller 的转场效果本质上是基于“当前视图消失和下一视图出现”所进行的动画。如果是自己实现的 UIViewControllerAnimatedTransitioning 协议，那么此动画就由 - animateTransition: 方法来提供；如果没有实现此协议则此动画由系统提供。以结构如下图的 Navigation Controller 为例：">
+<meta name="keywords" content="iOS,UIKit,Core Animation">
+<meta property="og:type" content="article">
+<meta property="og:title" content="View Controller 转场实现机制分析">
+<meta property="og:url" content="https://blog.yeatse.com/2016/09/10/view-controller-transition-implementation/index.html">
+<meta property="og:site_name" content="Wasteland">
+<meta property="og:description" content="众所周知，iOS 的 View Controller 的转场效果本质上是基于“当前视图消失和下一视图出现”所进行的动画。如果是自己实现的 UIViewControllerAnimatedTransitioning 协议，那么此动画就由 - animateTransition: 方法来提供；如果没有实现此协议则此动画由系统提供。以结构如下图的 Navigation Controller 为例：">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/14734732613835.jpg">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/14734073322458.jpg">
+<meta property="og:image" content="https://blog.yeatse.com/images/2016/20160910-screenshot.gif">
+<meta property="og:updated_time" content="2018-08-19T16:14:41.633Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="View Controller 转场实现机制分析">
+<meta name="twitter:description" content="众所周知，iOS 的 View Controller 的转场效果本质上是基于“当前视图消失和下一视图出现”所进行的动画。如果是自己实现的 UIViewControllerAnimatedTransitioning 协议，那么此动画就由 - animateTransition: 方法来提供；如果没有实现此协议则此动画由系统提供。以结构如下图的 Navigation Controller 为例：">
+<meta name="twitter:image" content="https://blog.yeatse.com/images/2016/14734732613835.jpg">
+
+
+
+
+
+
+  <link rel="canonical" href="https://blog.yeatse.com/2016/09/10/view-controller-transition-implementation/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>View Controller 转场实现机制分析 | Wasteland</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-cn">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Wasteland</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">提不起劲</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.yeatse.com/2016/09/10/view-controller-transition-implementation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Yeatse CC">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wasteland">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">View Controller 转场实现机制分析
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2016-09-10 12:33:51" itemprop="dateCreated datePublished" datetime="2016-09-10T12:33:51+08:00">2016-09-10</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-08-20 00:14:41" itemprop="dateModified" datetime="2018-08-20T00:14:41+08:00">2018-08-20</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/笔记/" itemprop="url" rel="index"><span itemprop="name">笔记</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>众所周知，iOS 的 View Controller 的转场效果本质上是基于“当前视图消失和下一视图出现”所进行的动画。如果是自己实现的 UIViewControllerAnimatedTransitioning 协议，那么此动画就由 <code>- animateTransition:</code> 方法来提供；如果没有实现此协议则此动画由系统提供。以结构如下图的 Navigation Controller 为例：</p>
+<p><img src="/images/2016/14734732613835.jpg" alt="Navigation Controller 结构"></p>
+<a id="more"></a>
+<p>在页面 B → A 切换的过程中，应用的视图层级结构如下图所示：<br><img src="/images/2016/14734073322458.jpg" alt="Navigation Controller B → A 切换"></p>
+<p>最终运行的转场动画，不论是系统默认的平移动画还是通过 UIViewControllerAnimatedTransitioning 来实现的动画，都作用在 View Controller A &amp; B 共同的父视图 UIViewControllerWrapperView 内部，而这个共同的父视图即是 <code>- [UIViewControllerContextTransitioning containerView]</code> 所返回的那个容器 View。</p>
+<hr>
+<p>下面再说说可交互式动画的实现机制。</p>
+<p>一般情况下，实现可交互式动画需要先实现 UIViewControllerInteractiveTransitioning 协议，通过<code>- startInteractiveTransition:</code> 来启动转场，然后不断调用 <code>- updateInteractiveTransition:</code> 更新转场进度，最后调用 <code>-  finishInteractiveTransition</code> 或 <code>- cancelInteractiveTransition</code> 来完成或取消转场。</p>
+<p><code>- updateInteractiveTransition:</code> 方法接受一个表示<code>完成百分比</code>的参数，显然这个百分比是用来更新转场动画 CAAnimation 的进度的，但是 Core Animation 框架并没有提供直接改变动画进度的接口，所以一直以来我都以为苹果利用它的特权调用了某些私有方法来完成这件事。直到有一天，我在一个视图中通过 <code>- [CALayer convertTime:fromLayer:]</code> 来定期检查当前 layer 的相对时间：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">CFTimeInterval</span> time = [<span class="keyword">self</span>.layer convertTime:<span class="built_in">CACurrentMediaTime</span>() fromLayer:<span class="literal">nil</span>];</span><br><span class="line"><span class="built_in">NSLog</span>(<span class="string">@"Current layer time: %@"</span>, @(time));</span><br></pre></td></tr></table></figure>
+<p>在通过左滑手势操作当前页滑动返回时，打出的 Log 是这样的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Current layer time: 261910.875040995</span><br><span class="line">Current layer time: 261911.377889105</span><br><span class="line">Current layer time: 0.02057165431515606</span><br><span class="line">Current layer time: 0.05607890069196765</span><br><span class="line">Current layer time: 0.1110305915132237</span><br><span class="line">Current layer time: 0.2074074031074266</span><br><span class="line">Current layer time: 0.2620772946859903</span><br><span class="line">Current layer time: 0.3263285024154589</span><br><span class="line">Current layer time: 261917.375051694</span><br><span class="line">Current layer time: 261917.879273495</span><br></pre></td></tr></table></figure>
+<p>当前 layer 的时间竟然变成了返回动画的相对时间！根据 Apple 文档说明，这个时间会被 CAMediaTiming 协议的属性所影响（如 speed），并且一个 layer 的时间发生改变，则此 layer 层级树中的子孙 layer 的时间全部发生同样的改变。所以我决定找出导致 layer 的 <code>speed</code> 值改变的元凶：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="built_in">UIView</span>* view = <span class="keyword">self</span>; view; view = view.superview) &#123;</span><br><span class="line">    <span class="keyword">if</span> (view.layer.speed != <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="built_in">NSLog</span>(<span class="string">@"Speed changed in the layer of view: %@, speed: %@, time offset: %@"</span>, view.class, @(view.layer.speed), @(view.layer.timeOffset));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>输出：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Speed changed in the layer of view: UIViewControllerWrapperView, speed: 0, time offset: 0.1144122469252434</span><br><span class="line">Speed changed in the layer of view: UIViewControllerWrapperView, speed: 0, time offset: 0.1479468599033816</span><br><span class="line">Speed changed in the layer of view: UIViewControllerWrapperView, speed: 0, time offset: 0.172463768115942</span><br><span class="line">Speed changed in the layer of view: UIViewControllerWrapperView, speed: 0, time offset: 0.2020531400966183</span><br></pre></td></tr></table></figure>
+<p>于是可交互动画的实现机制就变得明朗了：</p>
+<ol>
+<li>调用 <code>- startInteractiveTransition:</code> 方法，实际上是将 UIViewControllerWrapperView 的 <code>layer.speed</code> 值改成 0 以暂停动画；</li>
+<li>调用 <code>- updateInteractiveTransition:</code> 方法，实际上是通过 <code>duration</code> 和百分比换算出一个合适的 <code>timeOffset</code>，更新到 UIViewControllerWrapperView 的 layer 上面，以模拟动画进度更新的效果；</li>
+<li>调用 <code>- finishInteractiveTransition</code>，则是将 <code>layer.speed</code> 值改回 1，让 Core Animation 继续完成剩下的动画。</li>
+</ol>
+<p>这个 UIViewControllerWrapperView 就是上面图中那个共同的父 View，在不同的实现中，它的类名可能会有变化，但都是 <code>- [UIViewControllerContextTransitioning containerView]</code> 返回的那个容器 View。由于父 layer 的动画时间改变是会影响到所有子 layer 的，所以有时候即使不用 <code>transitionCoordinator</code>，一些看上去与转场过程毫无关联的动画依然会受滑动返回手势的影响：</p>
+<p><img src="/images/2016/20160910-screenshot.gif" alt="screenshot"></p>
+<p>最后一个问题，是调用 <code>- cancelInteractiveTransition</code> 之后，系统会自动将动画逆转，以回退到切换之前的状态，这个又是如何实现的呢？</p>
+<p><a href="http://blog.devtang.com/2016/03/13/iOS-transition-guide/" target="_blank" rel="noopener">网上一些文章</a> 介绍了通过一帧帧调整 timeOffset 值来模拟逆转动画的效果，还用了 CADisplayLink 来同步屏幕刷新率，讲道理我是不信苹果会用这么蠢的办法的。通过一系列断点和 Log 调试发现，实际上苹果做的事非常巧妙：将所有 CAAnimation 的 <code>autoreverses</code> 属性设定为 <code>YES</code>，然后将 <code>beginTime</code> 设定为一个在 <code>(- 2 * duration, - duration)</code> 区间的一个合适的值，再用 CAAnimationGroup 包裹起来，以保证 CAAnimation 只运行想要的那部分动画。这样一来由于 <code>autoreverses</code> 的作用，Core Animation 层自己就会将动画回放了。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+            <a href="/tags/UIKit/" rel="tag"># UIKit</a>
+          
+            <a href="/tags/Core-Animation/" rel="tag"># Core Animation</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/07/30/show-a-friendly-alert-after-app-crashes/" rel="next" title="在 iOS APP 崩溃时弹出友好提示框">
+                <i class="fa fa-chevron-left"></i> 在 iOS APP 崩溃时弹出友好提示框
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/10/08/using-3d-touch-with-uiwebview/" rel="prev" title="UIWebView 与 3D Touch 的自定义交互">
+                UIWebView 与 3D Touch 的自定义交互 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Yeatse CC</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">2</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yeatse CC</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Muse</a> v6.4.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
